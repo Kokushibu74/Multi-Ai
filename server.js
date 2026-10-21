@@ -47,13 +47,17 @@ function encrypt(value) {
 }
 function decrypt(text) {
   const packet = JSON.parse(text);
+  if (!packet.iv || !packet.tag || !packet.data) return {};
   const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(MEMORY_KEY, 'hex'), Buffer.from(packet.iv, 'hex'));
   decipher.setAuthTag(Buffer.from(packet.tag, 'hex'));
   const plain = Buffer.concat([decipher.update(Buffer.from(packet.data, 'hex')), decipher.final()]).toString('utf8');
   return JSON.parse(plain);
 }
 async function githubRequest(path, options = {}) {
-  const url = 'https://api.github.com/repos/' + encodeURIComponent(OWNER) + '/' + encodeURIComponent(REPO) + '/contents/' + path.split('/').map(encodeURIComponent).join('/');
+  const parts = path.split('?');
+  const filePath = parts[0].split('/').map(encodeURIComponent).join('/');
+  const query = parts[1] ? '?' + parts[1] : '';
+  const url = 'https://api.github.com/repos/' + encodeURIComponent(OWNER) + '/' + encodeURIComponent(REPO) + '/contents/' + filePath + query;
   const response = await fetch(url, {
     ...options,
     headers: {
