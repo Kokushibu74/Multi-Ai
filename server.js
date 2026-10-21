@@ -105,7 +105,7 @@ function clientKey(value) {
   return id;
 }
 function rememberIntent(text) {
-  return /^(?:please\\s+)?(?:remember|memorize|save this|keep this in mind|মনে রাখো|মনে রাখবে|এটা মনে রাখ|এটা মনে রাখো|মনে রেখো|সেভ করে রাখো)\\b?[:：\\s-]*/i.test(text.trim());
+  return /^(?:please\\s+)?(?:remember|memorize|save this|keep this in mind|মনে রাখো|মনে রাখবে|এটা মনে রাখ|এটা মনে রাখো|মনে রেখো|সেভ করে রাখো)[:：\\s-]*/i.test(text.trim());
 }
 function recallIntent(text) {
   return /(?:what did i ask you to remember|recall my memory|show my memories|list my memories|আমাকে কী মনে রাখতে বলেছিলাম|আমি কী মনে রাখতে বলেছি|আগের মেমোরি|মেমোরি দেখাও|মনে রাখা তথ্য|যা মনে রাখতে বলেছি)/i.test(text);
