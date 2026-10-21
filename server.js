@@ -105,7 +105,7 @@ function clientKey(value) {
   return id;
 }
 function rememberIntent(text) {
-  return /^(?:please\\s+)?(?:remember|memorize|save this|keep this in mind|মনে রাখো|মনে রাখবে|এটা মনে রাখ|এটা মনে রাখো|মনে রেখো|সেভ করে রাখো)[:：\\s-]*/i.test(text.trim());
+  return /^(?:please\s+)?(?:remember|memorize|save this|keep this in mind|মনে রাখো|মনে রাখবে|এটা মনে রাখ|এটা মনে রাখো|মনে রেখো|সেভ করে রাখো)[:：\s-]*/i.test(text.trim());
 }
 function recallIntent(text) {
   return /(?:what did i ask you to remember|recall my memory|show my memories|list my memories|আমাকে কী মনে রাখতে বলেছিলাম|আমি কী মনে রাখতে বলেছি|আগের মেমোরি|মেমোরি দেখাও|মনে রাখা তথ্য|যা মনে রাখতে বলেছি)/i.test(text);
@@ -192,7 +192,7 @@ app.post('/api/chat', async (req, res) => {
       return res.json({ text: list, provider: 'Memory', memoryAction: 'recall' });
     }
     if (rememberIntent(userText)) {
-      const text = userText.replace(/^(?:please\\s+)?(?:remember|memorize|save this|keep this in mind|মনে রাখো|মনে রাখবে|এটা মনে রাখ|এটা মনে রাখো|মনে রেখো|সেভ করে রাখো)[:：\\s-]*/i, '').trim();
+      const text = userText.replace(/^(?:please\s+)?(?:remember|memorize|save this|keep this in mind|মনে রাখো|মনে রাখবে|এটা মনে রাখ|এটা মনে রাখো|মনে রেখো|সেভ করে রাখো)[:：\s-]*/i, '').trim();
       if (!text) return res.json({ text: 'তুমি কী মনে রাখতে চাও, সেটা লিখে পাঠাও। যেমন: “মনে রাখো, আমার পছন্দের রং নীল।”', provider: 'Memory' });
       try {
         const { memory, sha } = await readMemoryFile();
