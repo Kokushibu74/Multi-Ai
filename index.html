@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#111318"><meta name="description" content="Multi AI — free keyless AI chat with voice mode.">
+<meta name="theme-color" content="#111318"><meta name="description" content="Multi AI — free keyless AI chat with voice, encrypted persistent memory, and Shihabul Islam portfolio knowledge.">
 <title>Multi AI — Live AI Chat</title>
 <style>
 :root{color-scheme:dark;--bg:#101116;--panel:#191b23;--line:#303341;--text:#eef0f7;--muted:#a5a9ba;--accent:#a8c7fa;--user:#293447}
@@ -34,14 +34,24 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
 <button id="clearBtn" title="Clear conversation">Clear</button>
 <button id="liveBtn">🎧 Go Live</button>
 </div>
-<div id="chat" aria-live="polite"><div class="welcome" id="welcome"><div class="orb">✦</div><h1>Meet your Multi AI</h1><p>Chat in Bangla, English or Banglish. Use the microphone for hands-free voice chat.</p></div></div>
+<div id="chat" aria-live="polite"><div class="welcome" id="welcome"><div class="orb">✦</div><h1>Meet your Multi AI</h1><p>Chat in Bangla, English or Banglish. Ask about Shihab’s portfolio, or say “মনে রাখো…” to save a memory.</p></div></div>
 </main>
-<footer><div class="composer"><textarea id="prompt" rows="1" placeholder="Message Multi AI…" aria-label="Message"></textarea><button id="micBtn" title="Voice input">🎙</button><button id="sendBtn" class="primary">Send ➤</button></div><div class="smallnote">Free community endpoints may be rate-limited, change, or be unavailable. Don't send secrets or personal data.</div></footer>
+<footer><div class="composer"><textarea id="prompt" rows="1" placeholder="Message Multi AI…" aria-label="Message"></textarea><button id="micBtn" title="Voice input">🎙</button><button id="sendBtn" class="primary">Send ➤</button></div><div class="smallnote">Free community endpoints may be rate-limited. Memory is encrypted before GitHub storage when the backend is configured. Don't save passwords or highly sensitive data.</div></footer>
 <script>
 (() => {
 const $ = id => document.getElementById(id);
 const chat=$('chat'), input=$('prompt'), sendBtn=$('sendBtn'), provider=$('provider'), status=$('liveStatus');
 let history=[],busy=false,isLive=false,isSpeaking=false,recognition=null;
+const API_BASE = 'https://multi-ai-memory-api.onrender.com';
+function getClientId(){
+ try {
+  let id=localStorage.getItem('multi-ai-client-id');
+  if(!id){id=(crypto.randomUUID?crypto.randomUUID():String(Date.now())+'-'+Math.random().toString(16).slice(2));localStorage.setItem('multi-ai-client-id',id);}
+  return id;
+ } catch(e) { return String(Date.now())+'-'+Math.random().toString(16).slice(2); }
+}
+const clientId=getClientId();
+const PORTFOLIO_CONTEXT = 'You are Multi AI, the assistant for Shihabul Islam. His portfolio is https://kokushibu74.github.io/. He is based in Bangladesh and works on web development, UI/UX, programming, AI assistants and automation. GitHub: https://github.com/Kokushibu74. Email: mdshihab74@gmail.com. WhatsApp: https://wa.me/8801620107233. YouTube: Lo-Fi World https://www.youtube.com/@Lo-Fi_World-x3w. Known projects include MEMO WhatsApp AI Assistant and Termux Tool OS. Do not invent details not listed here. Reply in Bangla, English, or Banglish to match the user.';
 const synth=window.speechSynthesis;
 function setStatus(s){status.textContent=s}
 function addMessage(role,text,extra=''){
@@ -52,22 +62,15 @@ function addMessage(role,text,extra=''){
  wrap.append(meta,body);chat.appendChild(wrap);chat.scrollTop=chat.scrollHeight;return body;
 }
 function cleanText(s){return String(s??'').trim()}
-async function callKilo(messages){
- const r=await fetch('https://api.kilo.ai/api/gateway/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'kilo-auto/free',messages})});
- if(!r.ok)throw new Error('Kilo AI returned HTTP '+r.status);
- const j=await r.json();const t=j?.choices?.[0]?.message?.content;if(!t)throw new Error('Kilo AI returned no text');return t;
+async function callBackend(messages){
+ const r=await fetch(API_BASE+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,provider:provider.value,clientId})});
+ if(!r.ok)throw new Error('AI backend HTTP '+r.status);
+ const j=await r.json();if(!j.text)throw new Error(j.error||'AI backend returned no text');
+ return {text:j.text,name:j.provider||'Multi AI'};
 }
-async function callLLM7(messages){
- const r=await fetch('https://api.llm7.io/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'gpt-oss:20b',messages})});
- if(!r.ok)throw new Error('LLM7 returned HTTP '+r.status);
- const j=await r.json();const t=j?.choices?.[0]?.message?.content;if(!t)throw new Error('LLM7 returned no text');return t;
-}
-async function getReply(messages){
- const choice=provider.value;let errors=[];
- const calls=choice==='kilo'?[['Kilo AI',callKilo]]:choice==='llm7'?[['LLM7',callLLM7]]:[['Kilo AI',callKilo],['LLM7',callLLM7]];
- for(const [name,fn] of calls){try{return {text:await fn(messages),name}}catch(e){errors.push(name+': '+e.message)}}
- throw new Error(errors.join(' · ')+' . This can also happen when the provider blocks browser CORS requests. Try another model or deploy a small backend proxy.');
-}
+async function callKilo(messages){ return callBackend([{role:'system',content:PORTFOLIO_CONTEXT},...messages]); }
+async function callLLM7(messages){ return callBackend([{role:'system',content:PORTFOLIO_CONTEXT},...messages]); }
+async function getReply(messages){ return callBackend([{role:'system',content:PORTFOLIO_CONTEXT},...messages]); }
 async function send(text){
  text=cleanText(text);if(!text||busy)return;
  input.value='';input.style.height='auto';addMessage('user',text);
