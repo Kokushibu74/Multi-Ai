@@ -1,0 +1,30 @@
+name: Keep Render API Awake
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping Multi AI Render API
+        env:
+          API_URL: https://multi-ai-memory-api.onrender.com/
+        run: |
+          set +e
+          code=$(curl --silent --show-error --location --max-time 45 --output /tmp/render-response.txt --write-out "%{http_code}" "$API_URL")
+          curl_status=$?
+          echo "HTTP status: ${code:-unknown}; curl exit: $curl_status"
+          head -c 500 /tmp/render-response.txt 2>/dev/null || true
+          echo
+          if [ "$curl_status" -ne 0 ]; then
+            exit "$curl_status"
+          fi
+          # Any HTTP response proves the host answered; a route-level 404 is still a valid wake-up ping.
+          if [ -z "$code" ] || [ "$code" = "000" ]; then exit 1; fi
