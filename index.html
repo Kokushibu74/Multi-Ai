@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#111318"><meta name="description" content="Multi AI — free keyless AI chat with voice mode.">
+<title>Multi AI — Live AI Chat</title>
+<style>
+:root{color-scheme:dark;--bg:#101116;--panel:#191b23;--line:#303341;--text:#eef0f7;--muted:#a5a9ba;--accent:#a8c7fa;--user:#293447}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 15% 0%,#20243a 0,transparent 45%),var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;height:100dvh;display:flex;flex-direction:column}
+header{height:68px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 max(16px,calc((100vw - 980px)/2));border-bottom:1px solid var(--line);background:#12131ae8;backdrop-filter:blur(12px)}
+.brand{font-size:19px;font-weight:750;letter-spacing:.2px}.brand span{color:var(--accent)}.headright{display:flex;gap:9px;align-items:center}.pill{border:1px solid var(--line);border-radius:999px;padding:5px 10px;color:var(--muted);font-size:12px}
+main{width:min(900px,100%);margin:0 auto;flex:1;min-height:0;display:flex;flex-direction:column;padding:18px 16px 0}
+.toolbar{display:flex;gap:9px;align-items:center;flex-wrap:wrap;padding-bottom:12px}select,button,textarea{font:inherit}select{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:9px 12px;max-width:100%}
+#provider{flex:1;min-width:155px}button{border:1px solid var(--line);background:#222530;color:var(--text);border-radius:12px;padding:9px 13px;cursor:pointer;transition:background .15s,transform .15s}button:hover{background:#303545}button:active{transform:scale(.98)}button.primary{background:var(--accent);color:#101522;border-color:transparent;font-weight:700}button:disabled{opacity:.5;cursor:not-allowed}
+#chat{flex:1;overflow:auto;display:flex;flex-direction:column;gap:14px;padding:12px 2px 24px;scroll-behavior:smooth}
+.welcome{margin:auto;text-align:center;max-width:520px;padding:24px}.orb{width:62px;height:62px;border-radius:22px;margin:0 auto 18px;background:linear-gradient(135deg,#91b9ff,#c8a5ff);display:grid;place-items:center;color:#111;font-size:28px;box-shadow:0 0 55px #8daeff33}.welcome h1{font-size:clamp(25px,5vw,38px);margin:0 0 8px}.welcome p{color:var(--muted);margin:0}
+.msg{max-width:85%;padding:13px 16px;border-radius:17px;white-space:pre-wrap;overflow-wrap:anywhere}.msg.user{align-self:flex-end;background:var(--user);border-bottom-right-radius:5px}.msg.bot{align-self:flex-start;background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:5px}.meta{font-size:11px;color:var(--muted);margin-bottom:5px}.msg img{max-width:100%}
+footer{width:min(900px,100%);margin:0 auto;padding:12px 16px max(14px,env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 18%)}
+.composer{border:1px solid #393d4b;background:var(--panel);border-radius:20px;padding:10px;display:flex;align-items:flex-end;gap:8px;box-shadow:0 8px 35px #0002}
+textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;background:transparent;color:var(--text);padding:9px;line-height:1.5}
+.smallnote{text-align:center;color:var(--muted);font-size:11px;margin-top:8px}.live{border-color:#ff6666;color:#ff9999}.status{font-size:12px;color:var(--muted);padding:0 3px}
+@media(max-width:520px){header{height:58px}.pill{display:none}main{padding:12px 12px 0}.msg{max-width:94%}footer{padding-left:12px;padding-right:12px}.toolbar button{padding:8px 10px}#provider{min-width:130px}}
+</style>
+</head>
+<body>
+<header><div class="brand">✦ <span>Multi</span> AI</div><div class="headright"><span class="pill">Keyless endpoints · best effort</span><span id="liveStatus" class="status">Ready</span></div></header>
+<main>
+<div class="toolbar">
+<select id="provider" aria-label="AI model">
+<option value="auto">Auto · try available providers</option>
+<option value="kilo">Kilo AI · kilo-auto/free</option>
+<option value="llm7">LLM7 · gpt-oss:20b</option>
+</select>
+<button id="clearBtn" title="Clear conversation">Clear</button>
+<button id="liveBtn">🎧 Go Live</button>
+</div>
+<div id="chat" aria-live="polite"><div class="welcome" id="welcome"><div class="orb">✦</div><h1>Meet your Multi AI</h1><p>Chat in Bangla, English or Banglish. Use the microphone for hands-free voice chat.</p></div></div>
+</main>
+<footer><div class="composer"><textarea id="prompt" rows="1" placeholder="Message Multi AI…" aria-label="Message"></textarea><button id="micBtn" title="Voice input">🎙</button><button id="sendBtn" class="primary">Send ➤</button></div><div class="smallnote">Free community endpoints may be rate-limited, change, or be unavailable. Don't send secrets or personal data.</div></footer>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const chat=$('chat'), input=$('prompt'), sendBtn=$('sendBtn'), provider=$('provider'), status=$('liveStatus');
+let history=[],busy=false,isLive=false,isSpeaking=false,recognition=null;
+const synth=window.speechSynthesis;
+function setStatus(s){status.textContent=s}
+function addMessage(role,text,extra=''){
+ $('welcome')?.remove();
+ const wrap=document.createElement('div');wrap.className='msg '+(role==='user'?'user':'bot');
+ const meta=document.createElement('div');meta.className='meta';meta.textContent=role==='user'?'You':extra||'Multi AI';
+ const body=document.createElement('div');body.textContent=text;
+ wrap.append(meta,body);chat.appendChild(wrap);chat.scrollTop=chat.scrollHeight;return body;
+}
+function cleanText(s){return String(s??'').trim()}
+async function callKilo(messages){
+ const r=await fetch('https://api.kilo.ai/api/gateway/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'kilo-auto/free',messages})});
+ if(!r.ok)throw new Error('Kilo AI returned HTTP '+r.status);
+ const j=await r.json();const t=j?.choices?.[0]?.message?.content;if(!t)throw new Error('Kilo AI returned no text');return t;
+}
+async function callLLM7(messages){
+ const r=await fetch('https://api.llm7.io/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'gpt-oss:20b',messages})});
+ if(!r.ok)throw new Error('LLM7 returned HTTP '+r.status);
+ const j=await r.json();const t=j?.choices?.[0]?.message?.content;if(!t)throw new Error('LLM7 returned no text');return t;
+}
+async function getReply(messages){
+ const choice=provider.value;let errors=[];
+ const calls=choice==='kilo'?[['Kilo AI',callKilo]]:choice==='llm7'?[['LLM7',callLLM7]]:[['Kilo AI',callKilo],['LLM7',callLLM7]];
+ for(const [name,fn] of calls){try{return {text:await fn(messages),name}}catch(e){errors.push(name+': '+e.message)}}
+ throw new Error(errors.join(' · ')+' . This can also happen when the provider blocks browser CORS requests. Try another model or deploy a small backend proxy.');
+}
+async function send(text){
+ text=cleanText(text);if(!text||busy)return;
+ input.value='';input.style.height='auto';addMessage('user',text);
+ history.push({role:'user',content:text});busy=true;sendBtn.disabled=true;setStatus('Thinking…');
+ const body=addMessage('assistant','Connecting to free AI provider…');
+ try{
+  const result=await getReply(history.slice(-16));
+  body.textContent=result.text;const m=body.parentElement.querySelector('.meta');if(m)m.textContent='Multi AI · '+result.name;
+  history.push({role:'assistant',content:result.text});
+  if(isLive)speak(result.text);
+ }catch(e){body.textContent='Could not get a reply. '+e.message;history.pop();}
+ finally{busy=false;sendBtn.disabled=false;if(!isLive)setStatus('Ready');chat.scrollTop=chat.scrollHeight;}
+}
+sendBtn.addEventListener('click',()=>send(input.value));
+input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send(input.value)}});
+input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,150)+'px'});
+$('clearBtn').addEventListener('click',()=>{history=[];chat.replaceChildren();const w=document.createElement('div');w.className='welcome';w.innerHTML='<div class="orb">✦</div><h1>Fresh conversation</h1><p>Your on-page chat history has been cleared.</p>';chat.appendChild(w)});
+function makeRecognition(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;
+ const r=new SR();r.lang='bn-BD';r.interimResults=false;r.continuous=false;
+ r.onresult=e=>{const t=e.results?.[0]?.[0]?.transcript;if(t){input.value=t;if(isLive)send(t);else input.focus()}};
+ r.onerror=()=>{if(isLive&&!isSpeaking){setStatus('Mic error — retrying');setTimeout(startRecognition,1000)}};
+ r.onend=()=>{if(isLive&&!isSpeaking)setTimeout(startRecognition,350)};
+ return r;
+}
+recognition=makeRecognition();
+function startRecognition(){if(!isLive||isSpeaking||!recognition)return;try{recognition.start();setStatus('Listening…')}catch(e){}}
+function speak(text){
+ if(!isLive||!synth)return;isSpeaking=true;
+ try{recognition?.stop()}catch(e){}
+ const u=new SpeechSynthesisUtterance(text);u.lang=/[\u0980-\u09FF]/.test(text)?'bn-BD':'en-US';u.rate=1.04;
+ u.onend=()=>{isSpeaking=false;if(isLive)startRecognition()};u.onerror=()=>{isSpeaking=false;if(isLive)startRecognition()};synth.speak(u);
+}
+$('micBtn').addEventListener('click',()=>{
+ if(!recognition){alert('Voice input needs a browser that supports SpeechRecognition (usually Chrome).');return}
+ isLive=false;try{recognition.start();setStatus('Listening…')}catch(e){setStatus('Microphone unavailable')}
+});
+$('liveBtn').addEventListener('click',()=>{
+ if(!recognition){alert('Live voice needs Chrome or another browser supporting SpeechRecognition.');return}
+ isLive=!isLive;$('liveBtn').textContent=isLive?'⏹ Stop Live':'🎧 Go Live';$('liveBtn').classList.toggle('live',isLive);
+ if(isLive){setStatus('Listening…');startRecognition()}else{setStatus('Ready');try{recognition.stop()}catch(e){}if(synth)synth.cancel();isSpeaking=false}
+});
+})();
+</script>
+</body></html>
