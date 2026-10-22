@@ -72,7 +72,11 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
 <dialog id="settingsDialog" class="settings-dialog" aria-labelledby="settingsTitle">
   <div class="settings-head"><h2 id="settingsTitle">⚙ Multi AI Settings</h2><button id="closeSettingsBtn" aria-label="Close settings">✕</button></div>
   <div class="settings-body">
-    <section class="settings-group"><h3>Performance</h3>\n      <label class="checkrow"><input id="settingsFastReply" type="checkbox"> Fast Reply Mode (recommended)</label>\n      <p>Uses a shorter recent chat context and skips optional reference lookups unless your question clearly needs current information. The AI provider still controls generation speed.</p>\n    </section>\n    <section class="settings-group"><h3>General & Voice</h3>
+    <section class="settings-group"><h3>Performance</h3>
+      <label class="checkrow"><input id="settingsFastReply" type="checkbox"> Fast Reply Mode (recommended)</label>
+      <p>Uses a shorter recent chat context and skips optional reference lookups unless your question clearly needs current information. The AI provider still controls generation speed.</p>
+    </section>
+    <section class="settings-group"><h3>General & Voice</h3>
       <div class="field"><label for="settingsLanguage">Voice input language</label><select id="settingsLanguage"><option value="auto">Auto · device language</option><option value="bn-BD">বাংলা (Bangladesh)</option><option value="en-US">English (US)</option></select></div>
       <label class="checkrow"><input id="settingsAutoSpeak" type="checkbox"> Read normal AI replies aloud</label>
       <div class="field"><label for="settingsVoice">Device voice (installed system voices)</label><select id="settingsVoice"><option value="">Automatic / system default</option></select></div>
@@ -196,7 +200,7 @@ function stripMarkup(value){
 }
 async function lookupWikipedia(query){
  if(!shouldLookupOnline(query))return '';
- const isClearlyCurrent=/\\b(latest|current|today|tonight|yesterday|tomorrow|now|recent|news|price|release|version|update|weather|election|president|score|schedule|deadline|rate|exchange|202[5-9]|2030)\\b|আজ|আজকে|এখন|বর্তমান|সর্বশেষ|সাম্প্রতিক|খবর|নিউজ|দাম|দর|আবহাওয়া|আবহাওয়া|নির্বাচন|রাষ্ট্রপতি|সংস্করণ|আপডেট|সময়|সময়|আজকের/i.test(query);
+ const isClearlyCurrent=/\b(latest|current|today|tonight|yesterday|tomorrow|now|recent|news|price|release|version|update|weather|election|president|score|schedule|deadline|rate|exchange|202[5-9]|2030)\b|আজ|আজকে|এখন|বর্তমান|সর্বশেষ|সাম্প্রতিক|খবর|নিউজ|দাম|দর|আবহাওয়া|আবহাওয়া|নির্বাচন|রাষ্ট্রপতি|সংস্করণ|আপডেট|সময়|সময়|আজকের/i.test(query);
  if(appSettings.fastReply!==false&&!isClearlyCurrent)return '';
  const lang=/[\u0980-\u09FF]/.test(query)?'bn':'en';
  async function searchWiki(wikiLang){
