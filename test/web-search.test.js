@@ -5,7 +5,7 @@ const fs = require('node:fs');
 
 test('web search adapter only requests fixed DuckDuckGo endpoint', () => {
   const source = fs.readFileSync(require.resolve('../web-search'), 'utf8');
-  assert.match(source, /https:\/\/html\.duckduckgo\.com\/html\//);
+  assert.match(source, /https:\/\/api\\.duckduckgo\\.com//);
   assert.doesNotMatch(source, /req\.query\.url|fetch\(req\.query/);
 });
 
