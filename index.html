@@ -62,7 +62,7 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
 <option value="llm7">LLM7 · gpt-oss:20b</option>
 </select>
 <button id="installBtn" hidden title="Install Multi AI on this device">⬇ Install App</button>
-<button id="searchBtn" title="Search the live web">🌐 Search</button><button id="documentBtn" title="Attach a document">📎 Document</button><input id="documentInput" type="file" accept=".txt,.md,.csv,.json,.html,.htm,.log,.xml" hidden><button id="clearBtn" title="Clear conversation">Clear</button>
+<button id="searchBtn" title="Search the live web">🌐 Search</button><button id="documentBtn" title="Attach a document">📎 Document</button><input id="documentInput" type="file" accept=".txt,.md,.csv,.json,.html,.htm,.log,.xml,.pdf,image/*" multiple hidden><button id="clearBtn" title="Clear conversation">Clear</button>
 <button id="liveBtn">🎧 Go Live</button>
 <button id="settingsBtn" aria-haspopup="dialog" title="App settings">⚙ Settings</button>
 </div>
@@ -256,7 +256,7 @@ input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventD
 input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,150)+'px'});
 $('searchBtn').addEventListener('click',()=>{if(!input.value.trim()){input.value='আজকের সর্বশেষ খবর / current information about …';input.focus();return}send(input.value.trim()+' — ওয়েবে রিয়েল-টাইম সার্চ করে সূত্রসহ উত্তর দাও')});
 $('documentBtn').addEventListener('click',()=>$('documentInput').click());
-$('documentInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{await attachDocument(file);input.value='এই ডকুমেন্টটি বিশ্লেষণ করে সারাংশ, গুরুত্বপূর্ণ তথ্য ও প্রশ্নের উত্তর দাও: '+file.name;input.focus()}catch(err){alert(err.message)}finally{e.target.value=''}});
+$('documentInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const files=Array.from(e.target.files||[]);let attached=[];for(const file of files){await attachDocument(file);attached.push(file.name)}input.value='সংযুক্ত ফাইলগুলো বিশ্লেষণ করে সারাংশ, গুরুত্বপূর্ণ তথ্য ও প্রশ্নের উত্তর দাও: '+attached.join(', ');input.focus()}catch(err){alert(err.message)}finally{e.target.value=''}});
 $('clearBtn').addEventListener('click',()=>{history=[];chat.replaceChildren();const w=document.createElement('div');w.className='welcome';w.innerHTML='<div class="orb">✦</div><h1>Fresh conversation</h1><p>Your on-page chat history has been cleared.</p>';chat.appendChild(w)});
 function makeRecognition(){
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;
