@@ -217,13 +217,42 @@ async function readWebPage(url){
  if(!response.ok)throw new Error(data.error||'Could not read this webpage.');
  return data;
 }
+async function extractPdf(file){
+ if(!window.pdfjsLib)throw new Error('PDF reader failed to load. Check internet and refresh.');
+ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+ const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+ let output='';
+ for(let n=1;n<=Math.min(pdf.numPages,20);n++){
+  const page=await pdf.getPage(n),content=await page.getTextContent();
+  let pageText=content.items.map(x=>x.str||'').join(' ').trim();
+  if(!pageText&&window.Tesseract){
+   const viewport=page.getViewport({scale:1.25}),canvas=document.createElement('canvas');
+   canvas.width=viewport.width;canvas.height=viewport.height;
+   await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
+   pageText=(await Tesseract.recognize(canvas,'eng+ben')).data.text||'';
+  }
+  output+='\\n[Page '+n+']\\n'+pageText;
+  if(output.length>30000)break;
+ }
+ return output.slice(0,30000);
+}
+async function extractImage(file){
+ if(!window.Tesseract)throw new Error('Image text reader failed to load. Check internet and refresh.');
+ return '[Image OCR text; extracted text only, not full visual understanding]\\n'+((await Tesseract.recognize(file,'eng+ben')).data.text||'No readable text found.');
+}
 async function attachDocument(file){
- if(!/\.(txt|md|csv|json|html?|log|xml)$/i.test(file.name))throw new Error('Supported files: TXT, MD, CSV, JSON, HTML, LOG, XML. PDF/DOCX are not supported yet.');
- if(file.size>2*1024*1024)throw new Error('Document must be 2 MB or smaller.');
- const text=await file.text();if(!text.trim())throw new Error('This document is empty.');
+ if(file.size>10*1024*1024)throw new Error('Each file must be 10 MB or smaller.');
+ let text='';
+ if(file.type==='application/pdf'||/\\.pdf$/i.test(file.name))text=await extractPdf(file);
+ else if(file.type.startsWith('image/'))text=await extractImage(file);
+ else {
+  if(!/\\.(txt|md|csv|json|html?|log|xml)$/i.test(file.name))throw new Error('Supported: PDF, JPG, PNG, WEBP, TXT, MD, CSV, JSON, HTML, LOG, XML.');
+  text=await file.text();
+ }
+ if(!text.trim())throw new Error('No readable text found in this file.');
  window.multiAiDocument={name:file.name,text:text.slice(0,30000)};
- $('documentStatus').hidden=false;$('documentStatus').textContent='📎 Attached: '+file.name+' · '+Math.min(text.length,30000)+' characters';
- setStatus('Document attached');
+ $('documentStatus').hidden=false;$('documentStatus').textContent='📎 Attached: '+file.name+' · '+Math.min(text.length,30000)+' characters extracted';
+ setStatus('File attached');
 }
 async function getReply(messages){
  const latest=[...messages].reverse().find(m=>m.role==='user')?.content||'';
