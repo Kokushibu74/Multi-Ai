@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#111318"><meta name="description" content="Multi AI — free keyless AI chat with voice, encrypted persistent memory, and Shihabul Islam portfolio knowledge.">
+<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" type="image/svg+xml" href="./icons/icon-192.svg"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="apple-touch-icon" href="./icons/icon-192.svg">
 <title>Multi AI — Live AI Chat</title>
 <style>
 :root{color-scheme:dark;--bg:#101116;--panel:#191b23;--line:#303341;--text:#eef0f7;--muted:#a5a9ba;--accent:#a8c7fa;--user:#293447}
@@ -31,6 +32,7 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
 <option value="kilo">Kilo AI · kilo-auto/free</option>
 <option value="llm7">LLM7 · gpt-oss:20b</option>
 </select>
+<button id="installBtn" hidden title="Install Multi AI on this device">⬇ Install App</button>
 <button id="clearBtn" title="Clear conversation">Clear</button>
 <button id="liveBtn">🎧 Go Live</button>
 </div>
@@ -179,5 +181,39 @@ $('liveBtn').addEventListener('click',()=>{
  if(isLive){setStatus('Listening…');startRecognition()}else{setStatus('Ready');try{recognition.stop()}catch(e){}if(synth)synth.cancel();isSpeaking=false}
 });
 })();
+let installPromptEvent=null;
+const installButton=document.getElementById('installBtn');
+function isStandalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true}
+function updateInstallButton(){
+ if(!installButton)return;
+ if(isStandalone()){installButton.hidden=true;return}
+ installButton.hidden=false;
+ installButton.textContent=installPromptEvent?'⬇ Install App':'＋ Add to Home Screen';
+}
+window.addEventListener('beforeinstallprompt',event=>{
+ event.preventDefault();installPromptEvent=event;updateInstallButton();
+});
+window.addEventListener('appinstalled',()=>{
+ installPromptEvent=null;updateInstallButton();
+ const status=document.getElementById('liveStatus');if(status)status.textContent='App installed';
+});
+if(installButton)installButton.addEventListener('click',async()=>{
+ if(isStandalone()){installButton.hidden=true;return}
+ if(installPromptEvent){
+  installPromptEvent.prompt();
+  try{await installPromptEvent.userChoice}catch(e){}
+  installPromptEvent=null;updateInstallButton();return;
+ }
+ const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+ alert(isIOS?'To install: tap Share, then “Add to Home Screen”.':'To install: open Chrome menu (⋮) and choose “Install app” or “Add to Home screen”. If that option is missing, wait for the site to finish loading or try again after GitHub Pages updates.');
+});
+updateInstallButton();
+if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost')){
+ window.addEventListener('load',()=>{
+  navigator.serviceWorker.register('./sw.js',{scope:'./'}).then(reg=>{
+   reg.update().catch(()=>{});
+  }).catch(()=>{});
+ });
+}
 </script>
 </body></html>
