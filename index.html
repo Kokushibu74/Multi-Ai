@@ -121,7 +121,7 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
   </section>
   <div class="live-bottom"><button id="liveSettingsBtn" type="button">⚙ Settings</button><button id="liveStopBtn" class="live-stop" type="button">⏹ Stop Live</button></div>
 </div>
-<script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script><script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script><script>
 (() => {
 const $ = id => document.getElementById(id);
 const chat=$('chat'), input=$('prompt'), sendBtn=$('sendBtn'), provider=$('provider'), status=$('liveStatus');
