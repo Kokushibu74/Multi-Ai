@@ -126,7 +126,7 @@ async function lookupWikipedia(query){
   if(!items.length&&lang==='bn')items=await searchWiki('en');
   if(!items.length)return '';
   const retrievedAt=new Intl.DateTimeFormat('bn-BD',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Dhaka'}).format(new Date());
-  return 'ONLINE REFERENCE RESULTS (retrieved '+retrievedAt+' Bangladesh time; these are search excerpts, not exhaustive live web search):\\n'+items.map((item,i)=>(i+1)+'. '+item.title+'\\n'+item.snippet+'\\nSource: '+item.url).join('\\n\\n')+'\\nUse only relevant information. Include source links where useful, do not claim these excerpts prove more than they say, and note when current events cannot be verified from these results.';
+  return 'ONLINE REFERENCE RESULTS (retrieved '+retrievedAt+' Bangladesh time; these are search excerpts, not exhaustive live web search):\n'+items.map((item,i)=>(i+1)+'. '+item.title+'\n'+item.snippet+'\nSource: '+item.url).join('\n\n')+'\nUse only relevant information. Include source links where useful, do not claim these excerpts prove more than they say, and note when current events cannot be verified from these results.';
  }catch(e){return ''}
 }
 async function getReply(messages){
