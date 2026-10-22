@@ -73,7 +73,7 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
   <div class="settings-head"><h2 id="settingsTitle">⚙ Multi AI Settings</h2><button id="closeSettingsBtn" aria-label="Close settings">✕</button></div>
   <div class="settings-body">
     <section class="settings-group"><h3>General & Voice</h3>
-      <div class="field"><label for="settingsLanguage">Voice input language</label><select id="settingsLanguage"><option value="auto">Auto · Bangla/English</option><option value="bn-BD">বাংলা (Bangladesh)</option><option value="en-US">English (US)</option></select></div>
+      <div class="field"><label for="settingsLanguage">Voice input language</label><select id="settingsLanguage"><option value="auto">Auto · device language</option><option value="bn-BD">বাংলা (Bangladesh)</option><option value="en-US">English (US)</option></select></div>
       <label class="checkrow"><input id="settingsAutoSpeak" type="checkbox"> Read normal AI replies aloud</label>
       <div class="field"><label for="settingsVoice">Device voice (installed system voices)</label><select id="settingsVoice"><option value="">Automatic / system default</option></select></div>
       <div class="field"><label for="settingsRate">Speaking speed · <span id="settingsRateValue">1.05×</span></label><input id="settingsRate" type="range" min="0.75" max="1.35" step="0.05" value="1.05"></div>
@@ -236,7 +236,7 @@ input.addEventListener('input',()=>{input.style.height='auto';input.style.height
 $('clearBtn').addEventListener('click',()=>{history=[];chat.replaceChildren();const w=document.createElement('div');w.className='welcome';w.innerHTML='<div class="orb">✦</div><h1>Fresh conversation</h1><p>Your on-page chat history has been cleared.</p>';chat.appendChild(w)});
 function makeRecognition(){
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;
- const r=new SR();r.lang=appSettings.language==='en-US'?'en-US':'bn-BD';r.interimResults=false;r.continuous=false;
+ const r=new SR();r.lang=appSettings.language==='en-US'?'en-US':(appSettings.language==='bn-BD'?'bn-BD':(/^en/i.test(navigator.language)?'en-US':'bn-BD'));r.interimResults=false;r.continuous=false;
  r.onresult=e=>{const t=e.results?.[0]?.[0]?.transcript;if(t){input.value=t;if(isLive)send(t);else input.focus()}};
  r.onerror=()=>{if(isLive&&!isSpeaking){setStatus('Mic error — retrying');setTimeout(startRecognition,1000)}};
  r.onend=()=>{if(isLive&&!isSpeaking)setTimeout(startRecognition,350)};
@@ -245,10 +245,10 @@ function makeRecognition(){
 recognition=makeRecognition();
 function startRecognition(){if(!isLive||isSpeaking||!recognition)return;try{recognition.start();setStatus('Listening…')}catch(e){}}
 function speak(text){
- if(!isLive||!synth)return;isSpeaking=true;
+ if((!isLive&&!appSettings.autoSpeak)||!synth)return;isSpeaking=true;if(isLive){$('liveOverlay').classList.remove('is-listening');$('liveOverlay').classList.add('is-speaking');$('liveModeStatus').textContent='SPEAKING';$('liveCaption').textContent=text.slice(0,240)}
  try{recognition?.stop()}catch(e){}
  const u=new SpeechSynthesisUtterance(text);u.lang=/[\u0980-\u09FF]/.test(text)?'bn-BD':'en-US';u.rate=Number(appSettings.rate)||1.05;u.pitch=Number(appSettings.pitch)||1;const selectedVoice=(synth?.getVoices?.()||[]).find(v=>v.voiceURI===appSettings.voiceURI);if(selectedVoice)u.voice=selectedVoice;
- u.onend=()=>{isSpeaking=false;if(isLive)startRecognition()};u.onerror=()=>{isSpeaking=false;if(isLive)startRecognition()};synth.speak(u);
+ u.onend=()=>{isSpeaking=false;if(isLive){$('liveOverlay').classList.remove('is-speaking');$('liveOverlay').classList.add('is-listening');$('liveModeStatus').textContent='LISTENING';startRecognition()}};u.onerror=()=>{isSpeaking=false;if(isLive){$('liveOverlay').classList.remove('is-speaking');$('liveOverlay').classList.add('is-listening');$('liveModeStatus').textContent='LISTENING';startRecognition()}};synth.speak(u);
 }
 $('micBtn').addEventListener('click',()=>{
  if(!recognition){alert('Voice input needs a browser that supports SpeechRecognition (usually Chrome).');return}
@@ -287,7 +287,7 @@ function loadSettingsForm(){
 function saveSettings(){
  appSettings={...appSettings,language:$('settingsLanguage').value,autoSpeak:$('settingsAutoSpeak').checked,voiceURI:$('settingsVoice').value,rate:Number($('settingsRate').value),pitch:Number($('settingsPitch').value),facebookAppId:$('facebookAppId').value.trim(),facebookRedirect:$('facebookRedirect').value.trim()};
  try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(appSettings));$('facebookStatus').textContent='Preferences saved on this device. Facebook is not connected.';setStatus('Settings saved')}catch(e){alert('Could not save settings in this browser. Check storage settings.')}
- if(recognition){try{recognition.lang=appSettings.language==='en-US'?'en-US':'bn-BD'}catch(e){}}
+ if(recognition){try{recognition.lang=appSettings.language==='en-US'?'en-US':(appSettings.language==='bn-BD'?'bn-BD':(/^en/i.test(navigator.language)?'en-US':'bn-BD'))}catch(e){}}
 }
 $('saveSettingsBtn').addEventListener('click',saveSettings);
 $('settingsRate').addEventListener('input',()=>{$('settingsRateValue').textContent=Number($('settingsRate').value).toFixed(2)+'×'});
@@ -296,15 +296,11 @@ if(synth)synth.onvoiceschanged=loadVoiceOptions;
 $('connectFacebookBtn').addEventListener('click',()=>{
  saveSettings();
  if(!/^\d{5,}$/.test(appSettings.facebookAppId)){alert('Enter a valid Meta App ID first.');return}
- let callback;try{callback=new URL(appSettings.facebookRedirect)}catch(e){alert('Enter a valid HTTPS OAuth callback URL hosted by your backend.');return}
+ let callback;try{callback=new URL(appSettings.facebookRedirect)}catch(e){alert('Enter the HTTPS OAuth callback URL from your configured backend.');return}
  if(callback.protocol!=='https:'&&callback.hostname!=='localhost'){alert('The OAuth callback must use HTTPS.');return}
- if(callback.origin==='https://multi-ai-memory-api.mdshihab74.workers.dev'){alert('This current Worker has not been verified to implement the OAuth callback. Configure that secure backend route before using it.');return}
- let state;try{state=crypto.randomUUID()}catch(e){state=String(Date.now())+'-'+Math.random().toString(36).slice(2)}
- try{sessionStorage.setItem('multi-ai-facebook-oauth-state',state)}catch(e){}
- const oauth=new URL('https://www.facebook.com/v26.0/dialog/oauth');
- oauth.searchParams.set('client_id',appSettings.facebookAppId);oauth.searchParams.set('redirect_uri',callback.href);oauth.searchParams.set('response_type','code');oauth.searchParams.set('state',state);oauth.searchParams.set('scope','public_profile,email,pages_show_list,pages_read_engagement,pages_manage_posts');
- $('facebookStatus').textContent='Opening Meta consent screen. Connection is not confirmed until your backend validates state, exchanges the code server-side, and returns a verified connection status.';
- const popup=window.open(oauth.href,'multiAiFacebookOAuth','popup,width=520,height=760');if(!popup)window.location.assign(oauth.href);
+ $('facebookStatus').textContent='OAuth is not active yet: this repository does not currently expose a verified server-side OAuth start/callback flow.';
+ alert('Facebook login is not connected yet. For security, Multi AI must first deploy server routes that start OAuth, validate the state, exchange the authorization code using the App Secret on the server, store the token securely, and expose a connection-status endpoint. This page will not collect your Facebook password or handle access tokens.');
+ window.open('https://developers.facebook.com/docs/facebook-login/','_blank','noopener,noreferrer');
 });
 $('checkDeviceBtn').addEventListener('click',()=>{
  const checks=['Speech recognition: '+((window.SpeechRecognition||window.webkitSpeechRecognition)?'supported':'not supported by this browser'),'Speech output: '+(synth?'supported':'not supported'),'Native share sheet: '+(navigator.share?'supported':'not supported'),'Clipboard write: '+(navigator.clipboard?.writeText?'available in this context':'not available / permission required'),'Installable PWA: '+(isStandalone()?'installed standalone':'check Chrome menu for Install app'),'Full Android / other-app control requires a native companion app and explicit Android permissions'];
