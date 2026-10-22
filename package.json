@@ -5,7 +5,9 @@
   "description": "Backend for Multi AI: provider proxy, encrypted GitHub-backed memory, and portfolio knowledge.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "check": "node --check server.js && node --check web-search.js",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=20"
