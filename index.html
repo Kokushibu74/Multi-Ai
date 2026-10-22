@@ -72,7 +72,7 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
 <dialog id="settingsDialog" class="settings-dialog" aria-labelledby="settingsTitle">
   <div class="settings-head"><h2 id="settingsTitle">⚙ Multi AI Settings</h2><button id="closeSettingsBtn" aria-label="Close settings">✕</button></div>
   <div class="settings-body">
-    <section class="settings-group"><h3>General & Voice</h3>
+    <section class="settings-group"><h3>Performance</h3>\n      <label class="checkrow"><input id="settingsFastReply" type="checkbox"> Fast Reply Mode (recommended)</label>\n      <p>Uses a shorter recent chat context and skips optional reference lookups unless your question clearly needs current information. The AI provider still controls generation speed.</p>\n    </section>\n    <section class="settings-group"><h3>General & Voice</h3>
       <div class="field"><label for="settingsLanguage">Voice input language</label><select id="settingsLanguage"><option value="auto">Auto · device language</option><option value="bn-BD">বাংলা (Bangladesh)</option><option value="en-US">English (US)</option></select></div>
       <label class="checkrow"><input id="settingsAutoSpeak" type="checkbox"> Read normal AI replies aloud</label>
       <div class="field"><label for="settingsVoice">Device voice (installed system voices)</label><select id="settingsVoice"><option value="">Automatic / system default</option></select></div>
@@ -123,7 +123,7 @@ const $ = id => document.getElementById(id);
 const chat=$('chat'), input=$('prompt'), sendBtn=$('sendBtn'), provider=$('provider'), status=$('liveStatus');
 let history=[],busy=false,isLive=false,isSpeaking=false,recognition=null,lastAssistantText='';
 const SETTINGS_KEY='multi-ai-settings-v1';
-const defaultSettings={language:'auto',autoSpeak:false,voiceURI:'',rate:1.05,pitch:1,facebookAppId:''};
+const defaultSettings={language:'auto',autoSpeak:false,voiceURI:'',rate:1.05,pitch:1,facebookAppId:'',fastReply:true};
 let facebookSession=null,facebookSdkPromise=null;
 function readSettings(){try{return {...defaultSettings,...JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}')}}catch(e){return {...defaultSettings}}}
 let appSettings=readSettings();
@@ -196,10 +196,12 @@ function stripMarkup(value){
 }
 async function lookupWikipedia(query){
  if(!shouldLookupOnline(query))return '';
+ const isClearlyCurrent=/\\b(latest|current|today|tonight|yesterday|tomorrow|now|recent|news|price|release|version|update|weather|election|president|score|schedule|deadline|rate|exchange|202[5-9]|2030)\\b|আজ|আজকে|এখন|বর্তমান|সর্বশেষ|সাম্প্রতিক|খবর|নিউজ|দাম|দর|আবহাওয়া|আবহাওয়া|নির্বাচন|রাষ্ট্রপতি|সংস্করণ|আপডেট|সময়|সময়|আজকের/i.test(query);
+ if(appSettings.fastReply!==false&&!isClearlyCurrent)return '';
  const lang=/[\u0980-\u09FF]/.test(query)?'bn':'en';
  async function searchWiki(wikiLang){
   const params=new URLSearchParams({action:'query',list:'search',srsearch:query,format:'json',origin:'*',srlimit:'4',srprop:'snippet'});
-  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),3000);
+  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),appSettings.fastReply!==false?1600:3000);
   try{
    const response=await fetch('https://'+wikiLang+'.wikipedia.org/w/api.php?'+params.toString(),{signal:controller.signal,headers:{Accept:'application/json'}});
    if(!response.ok)throw new Error('reference lookup unavailable');
@@ -225,9 +227,9 @@ async function send(text){
  text=cleanText(text);if(!text||busy)return;
  input.value='';input.style.height='auto';addMessage('user',text);
  history.push({role:'user',content:text});busy=true;sendBtn.disabled=true;setStatus('Thinking…');
- const body=addMessage('assistant','Connecting to free AI provider…');
+ const body=addMessage('assistant',isLive?'Thinking…':'Thinking…');
  try{
-  const result=await getReply(history.slice(-16));
+  const result=await getReply(history.slice(-(appSettings.fastReply!==false?8:16)));
   body.textContent=result.text;lastAssistantText=result.text;const m=body.parentElement.querySelector('.meta');if(m)m.textContent='Multi AI · '+result.name;
   history.push({role:'assistant',content:result.text});
   $('liveCaption').textContent=result.text.slice(0,240);
@@ -284,13 +286,13 @@ function loadVoiceOptions(){
  select.value=previous&&voices.some(v=>v.voiceURI===previous)?previous:'';
 }
 function loadSettingsForm(){
- $('settingsLanguage').value=appSettings.language;$('settingsAutoSpeak').checked=!!appSettings.autoSpeak;
+ $('settingsLanguage').value=appSettings.language;$('settingsAutoSpeak').checked=!!appSettings.autoSpeak;$('settingsFastReply').checked=appSettings.fastReply!==false;
  $('settingsRate').value=appSettings.rate;$('settingsPitch').value=appSettings.pitch;
  $('settingsRateValue').textContent=Number(appSettings.rate).toFixed(2)+'×';$('settingsPitchValue').textContent=Number(appSettings.pitch).toFixed(2);
  $('facebookAppId').value=appSettings.facebookAppId||'';$('facebookStatus').textContent=facebookSession?'Facebook account connected':'Facebook: not connected';loadVoiceOptions();
 }
 function saveSettings(){
- appSettings={...appSettings,language:$('settingsLanguage').value,autoSpeak:$('settingsAutoSpeak').checked,voiceURI:$('settingsVoice').value,rate:Number($('settingsRate').value),pitch:Number($('settingsPitch').value),facebookAppId:$('facebookAppId').value.trim()};
+ appSettings={...appSettings,language:$('settingsLanguage').value,autoSpeak:$('settingsAutoSpeak').checked,fastReply:$('settingsFastReply').checked,voiceURI:$('settingsVoice').value,rate:Number($('settingsRate').value),pitch:Number($('settingsPitch').value),facebookAppId:$('facebookAppId').value.trim()};
  try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(appSettings));$('facebookStatus').textContent='Preferences saved on this device. Facebook is not connected.';setStatus('Settings saved')}catch(e){alert('Could not save settings in this browser. Check storage settings.')}
  if(recognition){try{recognition.lang=appSettings.language==='en-US'?'en-US':(appSettings.language==='bn-BD'?'bn-BD':(/^en/i.test(navigator.language)?'en-US':'bn-BD'))}catch(e){}}
  if(/^\\d{5,}$/.test(appSettings.facebookAppId)&&!window.FB){ensureFacebookSdk(appSettings.facebookAppId).then(()=>{$('facebookStatus').textContent='Meta SDK ready. Tap Connect Facebook to sign in.'}).catch(e=>{$('facebookStatus').textContent='Could not load Meta SDK: '+e.message})}
