@@ -84,7 +84,7 @@ function addMessage(role,text,extra=''){
 }
 function cleanText(s){return String(s??'').trim()}
 async function callBackend(messages){
- const r=await fetch(API_BASE+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,provider:provider.value,clientId})});
+ const r=await fetch(API_BASE+'/api/chat',{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({messages,provider:provider.value,clientId})});
  let j={};try{j=await r.json()}catch(e){}
  if(!r.ok||!j.text){
   const detail=String(j.error||j.message||'');
