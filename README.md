@@ -13,6 +13,24 @@ A mobile-friendly, multilingual AI chat interface for **Bangla, English, and Ban
 - **Encrypted storage:** memory payloads are encrypted using AES-256-GCM before the backend writes `data/memory.enc.json` to GitHub. The encryption key stays in the backend's environment variables.
 - **Per-browser memory scope:** a random browser ID separates each visitor's memory list. Clearing browser storage loses that ID, so the old list will no longer be associated automatically.
 - **Responsive UI:** desktop and mobile layouts; the portfolio chatbot embeds this interface in a floating window.
+- **Go Live / Agent Mode:** animated full-screen voice session, visible listening/speaking state, selectable installed system voice, speech speed and pitch controls.
+- **Device actions:** user-initiated open-URL, Android share sheet, copy latest AI reply, and open WhatsApp actions in supported browsers.
+- **Settings:** provider stays in the main toolbar; language, auto-speak, voice, rate, pitch and device-local preferences are in Settings.
+- **Facebook setup UI:** stores the public Meta App ID and callback URL locally and explains the required OAuth backend; it intentionally does not claim Facebook is connected or request passwords/tokens.
+
+## 🎙 Go Live and device-action limits
+
+Go Live opens a full-screen animated voice interface. It uses the browser's speech recognition and speech synthesis support; available voices and language detection depend on the browser and Android system voices. The app can open a user-entered HTTP(S) URL, use the native share sheet, copy the latest answer, and open WhatsApp when the user taps those controls.
+
+**This is not full Android remote control.** A GitHub Pages PWA cannot silently operate other apps, read their screens/messages, change system settings, or grant itself Accessibility permission. Those tasks need a separately built native Android companion app with explicit Android permissions and a documented bridge.
+
+## 🔐 Facebook OAuth status
+
+The Settings → Connections → Facebook panel is setup UI only. Before login or Page posting is usable, the backend must implement the OAuth start/callback routes, validate OAuth state, exchange the authorization code server-side using the Meta App Secret, securely store/revoke tokens, and expose a verified connection status. Page publishing additionally needs the relevant Page permissions, Page access, and any Meta app review/access requirements. Never add a Meta App Secret or access token to index.html, local storage, or a public repository. The frontend intentionally does not report a connected account until the server integration exists.
+
+## 🧪 Inline script check
+
+GitHub Actions runs node scripts/check-inline-js.mjs before deploying Pages to catch JavaScript syntax errors in inline scripts.
 
 ## 🌐 GitHub Pages deployment
 
