@@ -59,8 +59,6 @@ WhatsApp: https://wa.me/8801620107233
 YouTube channel: Lo-Fi World — https://www.youtube.com/@Lo-Fi_World-x3w
 Known projects include MEMO WhatsApp AI Assistant and Termux Tool OS. The portfolio is a personal project showcase; do not invent project details, credentials, prices, or availability. Answer in Bangla, English, or Banglish to match the visitor.`;
 
-app.use(webSearchRouter);
-
 app.use(cors({
   origin(origin, callback) {
     if (!origin || ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
@@ -69,6 +67,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 }));
+
+app.use(webSearchRouter);
 
 function configReady() {
   return Boolean(TOKEN && MEMORY_KEY && Buffer.from(MEMORY_KEY, 'hex').length === 32);
