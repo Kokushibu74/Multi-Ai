@@ -16,7 +16,7 @@ A mobile-friendly, multilingual AI chat interface for **Bangla, English, and Ban
 - **Go Live / Agent Mode:** animated full-screen voice session, visible listening/speaking state, selectable installed system voice, speech speed and pitch controls.
 - **Device actions:** user-initiated open-URL, Android share sheet, copy latest AI reply, and open WhatsApp actions in supported browsers.
 - **Settings:** provider stays in the main toolbar; language, auto-speak, voice, rate, pitch and device-local preferences are in Settings.
-- **Facebook setup UI:** stores the public Meta App ID and callback URL locally and explains the required OAuth backend; it intentionally does not claim Facebook is connected or request passwords/tokens.
+- **Facebook Pages:** official Meta JavaScript SDK sign-in, Page listing and user-confirmed Page-post publishing. The App ID is stored locally; access tokens are kept only in memory and are not written to local storage. Personal-profile posting is not included.
 
 ## 🎙 Go Live and device-action limits
 
@@ -24,9 +24,13 @@ Go Live opens a full-screen animated voice interface. It uses the browser's spee
 
 **This is not full Android remote control.** A GitHub Pages PWA cannot silently operate other apps, read their screens/messages, change system settings, or grant itself Accessibility permission. Those tasks need a separately built native Android companion app with explicit Android permissions and a documented bridge.
 
-## 🔐 Facebook OAuth status
+## 🔐 Facebook Pages connection
 
-The Settings → Connections → Facebook panel is setup UI only. Before login or Page posting is usable, the backend must implement the OAuth start/callback routes, validate OAuth state, exchange the authorization code server-side using the Meta App Secret, securely store/revoke tokens, and expose a verified connection status. Page publishing additionally needs the relevant Page permissions, Page access, and any Meta app review/access requirements. Never add a Meta App Secret or access token to index.html, local storage, or a public repository. The frontend intentionally does not report a connected account until the server integration exists.
+Open Settings → Connections · Facebook, enter the **public Meta App ID**, save it, wait until the SDK is ready, then tap **Connect Facebook** and approve the requested permissions through Meta's official login screen. The app will try to list Pages available to the signed-in account. Select a Page, write the message, and tap **Publish Page post**; it asks for confirmation before submitting. Disconnect clears the in-memory session data from this page.
+
+In Meta for Developers, configure the app for the website origin `https://kokushibu74.github.io`, enable Facebook Login / the JavaScript SDK as required by Meta's current setup, and request the Page permissions `pages_show_list`, `pages_read_engagement`, and `pages_manage_posts`. App mode, assigned app roles, the Page's task access, and Meta App Review/access requirements can restrict usage. Graph API access is permissioned and is not guaranteed just because the consent screen opens.
+
+This flow is **for supported Facebook Page actions**, not creating posts directly on a personal Facebook profile. Access tokens and Page tokens are held in JavaScript memory during the current page session; they are not saved in local storage or committed to the repository. Do not add a Meta App Secret or access token to `index.html`. For multi-user production services, prefer a server-side token exchange and protected token store instead of client-only session handling.
 
 ## 🧪 Inline script check
 
