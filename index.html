@@ -64,8 +64,16 @@ function addMessage(role,text,extra=''){
 function cleanText(s){return String(s??'').trim()}
 async function callBackend(messages){
  const r=await fetch(API_BASE+'/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages,provider:provider.value,clientId})});
- if(!r.ok)throw new Error('AI backend HTTP '+r.status);
- const j=await r.json();if(!j.text)throw new Error(j.error||'AI backend returned no text');
+ let j={};try{j=await r.json()}catch(e){}
+ if(!r.ok||!j.text){
+  const detail=String(j.error||j.message||'');
+  const rateLimited=r.status===429||/rate.?limit|quota|too many requests|exhausted|limit reached/i.test(detail);
+  const reset=j.resetAt||j.reset_at||j.retryAt||j.retry_at||j.retryAfter||j.retry_after||null;
+  const resetDate=reset?(typeof reset==='number'?new Date(reset>1e12?reset:reset*1000):new Date(reset)):null;
+  const resetText=resetDate&&!Number.isNaN(resetDate.getTime())?' সম্ভাব্য পুনরায় চেষ্টা: '+new Intl.DateTimeFormat('bn-BD',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Dhaka'}).format(resetDate)+' (বাংলাদেশ সময়)।':' রিসেটের সঠিক সময় provider জানায়নি।';
+  if(rateLimited)throw new Error('সব চেষ্টা করা ফ্রি AI সার্ভিসের লিমিট শেষ বা সাময়িকভাবে ব্যস্ত। এখন একটু পরে বা আগামীকাল আবার চেষ্টা করো।'+resetText);
+  throw new Error(detail||'AI backend HTTP '+r.status);
+ }
  return {text:j.text,name:j.provider||'Multi AI'};
 }
 async function callKilo(messages){ return callBackend([{role:'system',content:PORTFOLIO_CONTEXT},...messages]); }
@@ -81,7 +89,7 @@ async function send(text){
   body.textContent=result.text;const m=body.parentElement.querySelector('.meta');if(m)m.textContent='Multi AI · '+result.name;
   history.push({role:'assistant',content:result.text});
   if(isLive)speak(result.text);
- }catch(e){body.textContent='Could not get a reply. '+e.message;history.pop();}
+ }catch(e){body.textContent=/rate.?limit|quota|ফ্রি AI সার্ভিসের লিমিট/i.test(e.message)?'⏳ Multi AI এখন ব্যস্ত! '+e.message:'Could not get a reply. '+e.message;history.pop();}
  finally{busy=false;sendBtn.disabled=false;if(!isLive)setStatus('Ready');chat.scrollTop=chat.scrollHeight;}
 }
 sendBtn.addEventListener('click',()=>send(input.value));
