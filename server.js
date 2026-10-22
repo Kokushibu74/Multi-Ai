@@ -3,6 +3,7 @@
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
+const webSearchRouter = require('./web-search');
 
 const app = express();
 app.disable('x-powered-by');
@@ -57,6 +58,8 @@ Contact email: mdshihab74@gmail.com
 WhatsApp: https://wa.me/8801620107233
 YouTube channel: Lo-Fi World — https://www.youtube.com/@Lo-Fi_World-x3w
 Known projects include MEMO WhatsApp AI Assistant and Termux Tool OS. The portfolio is a personal project showcase; do not invent project details, credentials, prices, or availability. Answer in Bangla, English, or Banglish to match the visitor.`;
+
+app.use(webSearchRouter);
 
 app.use(cors({
   origin(origin, callback) {
