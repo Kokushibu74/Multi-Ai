@@ -4,7 +4,7 @@ import vm from 'node:vm';
 
 const htmlPath = new URL('../index.html', import.meta.url);
 const html = readFileSync(fileURLToPath(htmlPath), 'utf8');
-const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script\\s*>/gi)];
+const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)];
 
 if (scripts.length === 0) {
   throw new Error('No inline script blocks found in index.html');
