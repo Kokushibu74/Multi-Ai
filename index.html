@@ -20,7 +20,36 @@ footer{width:min(900px,100%);margin:0 auto;padding:12px 16px max(14px,env(safe-a
 .composer{border:1px solid #393d4b;background:var(--panel);border-radius:20px;padding:10px;display:flex;align-items:flex-end;gap:8px;box-shadow:0 8px 35px #0002}
 textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;background:transparent;color:var(--text);padding:9px;line-height:1.5}
 .smallnote{text-align:center;color:var(--muted);font-size:11px;margin-top:8px}.live{border-color:#ff6666;color:#ff9999}.status{font-size:12px;color:var(--muted);padding:0 3px}
-@media(max-width:520px){header{height:58px}.pill{display:none}main{padding:12px 12px 0}.msg{max-width:94%}footer{padding-left:12px;padding-right:12px}.toolbar button{padding:8px 10px}#provider{min-width:130px}}
+[hidden]{display:none!important}
+.settings-dialog{width:min(620px,calc(100% - 22px));max-width:620px;max-height:88dvh;padding:0;border:1px solid #41465a;border-radius:22px;background:#171923;color:var(--text);box-shadow:0 25px 100px #000a;overflow:auto}
+.settings-dialog::backdrop{background:#05060bd9;backdrop-filter:blur(10px)}
+.settings-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:17px 19px;background:#171923ee;border-bottom:1px solid var(--line);backdrop-filter:blur(10px)}
+.settings-head h2{margin:0;font-size:20px}.settings-body{padding:17px;display:grid;gap:17px}
+.settings-group{border:1px solid var(--line);background:#1e202a;border-radius:16px;padding:14px;display:grid;gap:11px}
+.settings-group h3{margin:0 0 2px;font-size:14px}.settings-group p{margin:0;color:var(--muted);font-size:12px}
+.field{display:grid;gap:5px}.field label,.checkrow{font-size:13px;color:#dce0ee}.field input,.field select{width:100%;min-width:0;background:#101219;border:1px solid #41465a;color:var(--text);border-radius:10px;padding:10px}
+.field input[type=range]{padding:0;accent-color:var(--accent)}.checkrow{display:flex;align-items:center;gap:9px}.checkrow input{accent-color:var(--accent);width:16px;height:16px}
+.button-row{display:flex;gap:8px;flex-wrap:wrap}.button-row button{flex:1}
+.notice{font-size:12px;line-height:1.5;padding:10px 12px;border-radius:12px;background:#282333;border:1px solid #514163;color:#d7caff}
+.live-overlay{position:fixed;inset:0;z-index:20;background:radial-gradient(ellipse at 50% 28%,#26365b 0%,#121522 42%,#07080d 100%);display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:max(20px,env(safe-area-inset-top)) 18px max(20px,env(safe-area-inset-bottom));overflow:auto}
+.live-top{width:min(650px,100%);display:flex;align-items:center;justify-content:space-between;gap:10px}.live-brand{font-weight:800;letter-spacing:.5px}.live-indicator{font-size:12px;color:#b6c6ff;border:1px solid #4c5e89;border-radius:999px;padding:6px 10px}
+.live-center{display:flex;flex-direction:column;align-items:center;text-align:center;gap:17px;margin:auto 0;width:100%}
+.live-orb-shell{width:clamp(180px,52vw,270px);aspect-ratio:1;display:grid;place-items:center;position:relative;isolation:isolate}
+.live-orb-shell::before,.live-orb-shell::after{content:"";position:absolute;inset:0;border-radius:50%;border:1px solid #8baeff6b;animation:orbitPulse 3.6s ease-out infinite;z-index:-1}
+.live-orb-shell::after{animation-delay:1.8s}
+.live-orb{width:69%;aspect-ratio:1;border-radius:42% 58% 56% 44%/44% 39% 61% 56%;background:radial-gradient(circle at 28% 25%,#e4e5ff 0,#b9c5ff 12%,#8daeff 29%,#846ce8 56%,#282c62 100%);box-shadow:0 0 38px #8e9dff7a,0 0 95px #655ce766,inset -14px -18px 35px #17194666;animation:orbDrift 7s ease-in-out infinite,orbBreathe 2.3s ease-in-out infinite;transition:filter .25s}
+.live-overlay.is-speaking .live-orb{filter:hue-rotate(23deg) brightness(1.16);animation-duration:2.6s,.55s}
+.live-overlay.is-listening .live-orb{box-shadow:0 0 50px #65dbff9c,0 0 120px #508aff7a,inset -14px -18px 35px #17194666}
+.live-title{margin:0;font-size:clamp(26px,6vw,42px);letter-spacing:-.7px}.live-subtitle{margin:0;color:#b5bbd1;max-width:450px}
+.wave{height:33px;display:flex;align-items:center;justify-content:center;gap:4px}.wave i{display:block;width:4px;height:7px;border-radius:8px;background:#aabaff;opacity:.85;animation:wave 1s ease-in-out infinite}.wave i:nth-child(2n){animation-delay:.12s}.wave i:nth-child(3n){animation-delay:.25s}.live-overlay:not(.is-listening):not(.is-speaking) .wave i{animation-play-state:paused}
+.live-tools{width:min(620px,100%);border:1px solid #30374f;background:#111521d9;border-radius:20px;padding:13px;display:grid;gap:10px}.live-tools h3{font-size:13px;margin:0;color:#e3e7fa}.live-tools .field{display:flex;gap:8px}.live-tools input{flex:1;min-width:0;background:#0b0e16;border:1px solid #363d52;color:white;border-radius:11px;padding:10px}
+.live-tool-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.live-tool-buttons button{font-size:12px;padding:10px 6px;border-color:#373d56;background:#1c2233}
+.live-bottom{width:min(650px,100%);display:flex;gap:9px;justify-content:center;padding-top:14px}.live-bottom button{min-width:110px}.live-stop{background:#9c3e59;border-color:#c45b76}
+@keyframes orbitPulse{0%{transform:scale(.83);opacity:.72}100%{transform:scale(1.48);opacity:0}}
+@keyframes orbDrift{0%,100%{border-radius:42% 58% 56% 44%/44% 39% 61% 56%;transform:rotate(0deg)}50%{border-radius:57% 43% 42% 58%/52% 57% 43% 48%;transform:rotate(8deg)}}
+@keyframes orbBreathe{0%,100%{scale:1}50%{scale:1.055}}@keyframes wave{0%,100%{height:6px}50%{height:25px}}
+@media(prefers-reduced-motion:reduce){.live-orb,.live-orb-shell::before,.live-orb-shell::after,.wave i{animation:none!important}}
+@media(max-width:520px){header{height:58px}.pill{display:none}main{padding:12px 12px 0}.msg{max-width:94%}footer{padding-left:12px;padding-right:12px}.toolbar button{padding:8px 10px}#provider{min-width:130px}.settings-body{padding:12px}.live-tools{padding:10px}.live-tool-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}.live-bottom button{flex:1;min-width:0}}
 </style>
 </head>
 <body>
@@ -35,15 +64,64 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
 <button id="installBtn" hidden title="Install Multi AI on this device">⬇ Install App</button>
 <button id="clearBtn" title="Clear conversation">Clear</button>
 <button id="liveBtn">🎧 Go Live</button>
+<button id="settingsBtn" aria-haspopup="dialog" title="App settings">⚙ Settings</button>
 </div>
 <div id="chat" aria-live="polite"><div class="welcome" id="welcome"><div class="orb">✦</div><h1>Meet your Multi AI</h1><p>Chat in Bangla, English or Banglish. Ask about Shihab’s portfolio, or say “মনে রাখো…” to save a memory.</p></div></div>
 </main>
 <footer><div class="composer"><textarea id="prompt" rows="1" placeholder="Message Multi AI…" aria-label="Message"></textarea><button id="micBtn" title="Voice input">🎙</button><button id="sendBtn" class="primary">Send ➤</button></div><div class="smallnote">Free community endpoints may be rate-limited. Memory and feedback can help personalize future chats when the backend is configured. Don't save passwords or highly sensitive data.</div></footer>
+<dialog id="settingsDialog" class="settings-dialog" aria-labelledby="settingsTitle">
+  <div class="settings-head"><h2 id="settingsTitle">⚙ Multi AI Settings</h2><button id="closeSettingsBtn" aria-label="Close settings">✕</button></div>
+  <div class="settings-body">
+    <section class="settings-group"><h3>General & Voice</h3>
+      <div class="field"><label for="settingsLanguage">Voice input language</label><select id="settingsLanguage"><option value="auto">Auto · Bangla/English</option><option value="bn-BD">বাংলা (Bangladesh)</option><option value="en-US">English (US)</option></select></div>
+      <label class="checkrow"><input id="settingsAutoSpeak" type="checkbox"> Read normal AI replies aloud</label>
+      <div class="field"><label for="settingsVoice">Device voice (installed system voices)</label><select id="settingsVoice"><option value="">Automatic / system default</option></select></div>
+      <div class="field"><label for="settingsRate">Speaking speed · <span id="settingsRateValue">1.05×</span></label><input id="settingsRate" type="range" min="0.75" max="1.35" step="0.05" value="1.05"></div>
+      <div class="field"><label for="settingsPitch">Voice pitch · <span id="settingsPitchValue">1.0</span></label><input id="settingsPitch" type="range" min="0.75" max="1.25" step="0.05" value="1"></div>
+      <p>Voice quality depends on voices installed on your Android/browser. The app does not clone a real person's voice.</p>
+    </section>
+    <section class="settings-group"><h3>Connections · Facebook</h3>
+      <p>Official OAuth setup only. An App ID and secure server callback are required; never put an App Secret or access token here.</p>
+      <div class="field"><label for="facebookAppId">Meta / Facebook App ID</label><input id="facebookAppId" inputmode="numeric" autocomplete="off" placeholder="Enter your public App ID"></div>
+      <div class="field"><label for="facebookRedirect">Secure OAuth callback URL (backend)</label><input id="facebookRedirect" type="url" autocomplete="url" placeholder="https://your-backend.example.com/oauth/facebook/callback"></div>
+      <div class="notice">The current Multi AI backend has no verified Facebook OAuth callback or token-status route. This form can save the public setup values and open Meta's consent screen, but it cannot claim a connected account or publish anything until that backend is implemented and validated.</div>
+      <div class="button-row"><button id="saveSettingsBtn" class="primary" type="button">Save settings</button><button id="connectFacebookBtn" type="button">Continue to Facebook Login</button></div>
+      <p id="facebookStatus" role="status">Facebook: not connected · OAuth backend not verified</p>
+      <a href="https://developers.facebook.com/apps/" target="_blank" rel="noopener noreferrer">Meta for Developers ↗</a>
+    </section>
+    <section class="settings-group"><h3>Agent & Device Tools</h3>
+      <p>Go Live enables hands-free voice chat and offers browser-approved actions: open a URL, share the page, copy the latest reply, or open WhatsApp. It cannot silently change Android settings, read other apps, or control the whole phone.</p>
+      <div class="button-row"><button id="checkDeviceBtn" type="button">Check device support</button><button id="openLiveFromSettingsBtn" type="button">Start Agent Mode</button></div>
+      <p id="deviceStatus" role="status">Device capability has not been checked.</p>
+    </section>
+    <section class="settings-group"><h3>Privacy & Storage</h3>
+      <p>Preferences are stored in this browser's local storage. Facebook tokens/passwords are never saved by this page. Chat messages are sent to the configured AI backend/provider when you send them.</p>
+      <div class="button-row"><button id="resetSettingsBtn" type="button">Reset preferences</button><button id="clearLocalDataBtn" type="button">Clear local preferences</button></div>
+    </section>
+  </div>
+</dialog>
+<div id="liveOverlay" class="live-overlay" hidden role="dialog" aria-modal="true" aria-label="Multi AI live agent mode">
+  <div class="live-top"><div class="live-brand">✦ MULTI AI <span style="color:#9eb8ff">AGENT</span></div><span id="liveModeStatus" class="live-indicator">VOICE AGENT READY</span></div>
+  <div class="live-center"><div class="live-orb-shell"><div class="live-orb" aria-hidden="true"></div></div>
+    <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><h1 class="live-title">I'm listening.</h1>
+    <p id="liveCaption" class="live-subtitle">Speak naturally in Bangla or English. Tap Stop Live to end the session.</p>
+  </div>
+  <section class="live-tools"><h3>Phone actions · tap to run</h3>
+    <div class="field"><input id="agentUrlInput" type="url" inputmode="url" placeholder="https://example.com" aria-label="Website address"><button id="agentOpenUrlBtn" type="button">Open URL ↗</button></div>
+    <div class="live-tool-buttons"><button id="agentShareBtn" type="button">↗ Share page</button><button id="agentCopyBtn" type="button">▣ Copy last reply</button><button id="agentWhatsAppBtn" type="button">◉ Open WhatsApp</button></div>
+    <p style="color:#aab2cb;font-size:11px;margin:0">Actions open a page or the Android share sheet; this web app cannot operate other apps invisibly.</p>
+  </section>
+  <div class="live-bottom"><button id="liveSettingsBtn" type="button">⚙ Settings</button><button id="liveStopBtn" class="live-stop" type="button">⏹ Stop Live</button></div>
+</div>
 <script>
 (() => {
 const $ = id => document.getElementById(id);
 const chat=$('chat'), input=$('prompt'), sendBtn=$('sendBtn'), provider=$('provider'), status=$('liveStatus');
-let history=[],busy=false,isLive=false,isSpeaking=false,recognition=null;
+let history=[],busy=false,isLive=false,isSpeaking=false,recognition=null,lastAssistantText='';
+const SETTINGS_KEY='multi-ai-settings-v1';
+const defaultSettings={language:'auto',autoSpeak:false,voiceURI:'',rate:1.05,pitch:1,facebookAppId:'',facebookRedirect:''};
+function readSettings(){try{return {...defaultSettings,...JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}')}}catch(e){return {...defaultSettings}}}
+let appSettings=readSettings();
 const API_BASE = 'https://multi-ai-memory-api.mdshihab74.workers.dev';
 function getClientId(){
  try {
@@ -145,9 +223,10 @@ async function send(text){
  const body=addMessage('assistant','Connecting to free AI provider…');
  try{
   const result=await getReply(history.slice(-16));
-  body.textContent=result.text;const m=body.parentElement.querySelector('.meta');if(m)m.textContent='Multi AI · '+result.name;
+  body.textContent=result.text;lastAssistantText=result.text;const m=body.parentElement.querySelector('.meta');if(m)m.textContent='Multi AI · '+result.name;
   history.push({role:'assistant',content:result.text});
-  if(isLive)speak(result.text);
+  $('liveCaption').textContent=result.text.slice(0,240);
+  if(isLive||appSettings.autoSpeak)speak(result.text);
  }catch(e){body.textContent=/rate.?limit|quota|ফ্রি AI সার্ভিসের লিমিট/i.test(e.message)?'⏳ Multi AI এখন ব্যস্ত! '+e.message:'Could not get a reply. '+e.message;history.pop();}
  finally{busy=false;sendBtn.disabled=false;if(!isLive)setStatus('Ready');chat.scrollTop=chat.scrollHeight;}
 }
@@ -157,7 +236,7 @@ input.addEventListener('input',()=>{input.style.height='auto';input.style.height
 $('clearBtn').addEventListener('click',()=>{history=[];chat.replaceChildren();const w=document.createElement('div');w.className='welcome';w.innerHTML='<div class="orb">✦</div><h1>Fresh conversation</h1><p>Your on-page chat history has been cleared.</p>';chat.appendChild(w)});
 function makeRecognition(){
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;
- const r=new SR();r.lang='bn-BD';r.interimResults=false;r.continuous=false;
+ const r=new SR();r.lang=appSettings.language==='en-US'?'en-US':'bn-BD';r.interimResults=false;r.continuous=false;
  r.onresult=e=>{const t=e.results?.[0]?.[0]?.transcript;if(t){input.value=t;if(isLive)send(t);else input.focus()}};
  r.onerror=()=>{if(isLive&&!isSpeaking){setStatus('Mic error — retrying');setTimeout(startRecognition,1000)}};
  r.onend=()=>{if(isLive&&!isSpeaking)setTimeout(startRecognition,350)};
@@ -168,18 +247,81 @@ function startRecognition(){if(!isLive||isSpeaking||!recognition)return;try{reco
 function speak(text){
  if(!isLive||!synth)return;isSpeaking=true;
  try{recognition?.stop()}catch(e){}
- const u=new SpeechSynthesisUtterance(text);u.lang=/[\u0980-\u09FF]/.test(text)?'bn-BD':'en-US';u.rate=1.04;
+ const u=new SpeechSynthesisUtterance(text);u.lang=/[\u0980-\u09FF]/.test(text)?'bn-BD':'en-US';u.rate=Number(appSettings.rate)||1.05;u.pitch=Number(appSettings.pitch)||1;const selectedVoice=(synth?.getVoices?.()||[]).find(v=>v.voiceURI===appSettings.voiceURI);if(selectedVoice)u.voice=selectedVoice;
  u.onend=()=>{isSpeaking=false;if(isLive)startRecognition()};u.onerror=()=>{isSpeaking=false;if(isLive)startRecognition()};synth.speak(u);
 }
 $('micBtn').addEventListener('click',()=>{
  if(!recognition){alert('Voice input needs a browser that supports SpeechRecognition (usually Chrome).');return}
  isLive=false;try{recognition.start();setStatus('Listening…')}catch(e){setStatus('Microphone unavailable')}
 });
-$('liveBtn').addEventListener('click',()=>{
- if(!recognition){alert('Live voice needs Chrome or another browser supporting SpeechRecognition.');return}
- isLive=!isLive;$('liveBtn').textContent=isLive?'⏹ Stop Live':'🎧 Go Live';$('liveBtn').classList.toggle('live',isLive);
- if(isLive){setStatus('Listening…');startRecognition()}else{setStatus('Ready');try{recognition.stop()}catch(e){}if(synth)synth.cancel();isSpeaking=false}
+function enterAgentMode(){
+ if(!recognition){alert('Live voice needs Chrome or another browser supporting SpeechRecognition. You can still use Settings and device-action buttons.');return}
+ isLive=true;$('liveBtn').textContent='⏹ Stop Live';$('liveBtn').classList.add('live');
+ $('liveOverlay').hidden=false;$('liveOverlay').classList.add('is-listening');$('liveModeStatus').textContent='VOICE AGENT · ON';
+ $('liveCaption').textContent='Speak naturally in Bangla or English.';setStatus('Agent mode');startRecognition();
+}
+function exitAgentMode(){
+ isLive=false;$('liveOverlay').hidden=true;$('liveOverlay').classList.remove('is-listening','is-speaking');$('liveBtn').textContent='🎧 Go Live';$('liveBtn').classList.remove('live');setStatus('Ready');
+ try{recognition?.stop()}catch(e){}if(synth)synth.cancel();isSpeaking=false;
+}
+$('liveBtn').addEventListener('click',()=>{if(isLive)exitAgentMode();else enterAgentMode()});
+$('liveStopBtn').addEventListener('click',exitAgentMode);
+$('openLiveFromSettingsBtn').addEventListener('click',()=>{$('settingsDialog').close();enterAgentMode()});
+$('settingsBtn').addEventListener('click',()=>{loadSettingsForm();$('settingsDialog').showModal()});
+$('closeSettingsBtn').addEventListener('click',()=>$('settingsDialog').close());
+$('liveSettingsBtn').addEventListener('click',()=>{$('settingsDialog').showModal();loadSettingsForm()});
+$('settingsDialog').addEventListener('click',e=>{if(e.target===$('settingsDialog'))$('settingsDialog').close()});
+function loadVoiceOptions(){
+ const select=$('settingsVoice');if(!select)return;const previous=appSettings.voiceURI;select.replaceChildren();
+ const automatic=document.createElement('option');automatic.value='';automatic.textContent='Automatic / system default';select.appendChild(automatic);
+ const voices=synth?.getVoices?.()||[];voices.sort((a,b)=>{const x=/bn/i.test(a.lang)?0:1,y=/bn/i.test(b.lang)?0:1;return x-y||a.name.localeCompare(b.name)});
+ voices.forEach(v=>{const opt=document.createElement('option');opt.value=v.voiceURI;opt.textContent=v.name+' ('+v.lang+')'+(v.default?' · default':'');select.appendChild(opt)});
+ select.value=previous&&voices.some(v=>v.voiceURI===previous)?previous:'';
+}
+function loadSettingsForm(){
+ $('settingsLanguage').value=appSettings.language;$('settingsAutoSpeak').checked=!!appSettings.autoSpeak;
+ $('settingsRate').value=appSettings.rate;$('settingsPitch').value=appSettings.pitch;
+ $('settingsRateValue').textContent=Number(appSettings.rate).toFixed(2)+'×';$('settingsPitchValue').textContent=Number(appSettings.pitch).toFixed(2);
+ $('facebookAppId').value=appSettings.facebookAppId||'';$('facebookRedirect').value=appSettings.facebookRedirect||'';$('facebookStatus').textContent='Facebook: not connected · OAuth backend not verified';loadVoiceOptions();
+}
+function saveSettings(){
+ appSettings={...appSettings,language:$('settingsLanguage').value,autoSpeak:$('settingsAutoSpeak').checked,voiceURI:$('settingsVoice').value,rate:Number($('settingsRate').value),pitch:Number($('settingsPitch').value),facebookAppId:$('facebookAppId').value.trim(),facebookRedirect:$('facebookRedirect').value.trim()};
+ try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(appSettings));$('facebookStatus').textContent='Preferences saved on this device. Facebook is not connected.';setStatus('Settings saved')}catch(e){alert('Could not save settings in this browser. Check storage settings.')}
+ if(recognition){try{recognition.lang=appSettings.language==='en-US'?'en-US':'bn-BD'}catch(e){}}
+}
+$('saveSettingsBtn').addEventListener('click',saveSettings);
+$('settingsRate').addEventListener('input',()=>{$('settingsRateValue').textContent=Number($('settingsRate').value).toFixed(2)+'×'});
+$('settingsPitch').addEventListener('input',()=>{$('settingsPitchValue').textContent=Number($('settingsPitch').value).toFixed(2)});
+if(synth)synth.onvoiceschanged=loadVoiceOptions;
+$('connectFacebookBtn').addEventListener('click',()=>{
+ saveSettings();
+ if(!/^\d{5,}$/.test(appSettings.facebookAppId)){alert('Enter a valid Meta App ID first.');return}
+ let callback;try{callback=new URL(appSettings.facebookRedirect)}catch(e){alert('Enter a valid HTTPS OAuth callback URL hosted by your backend.');return}
+ if(callback.protocol!=='https:'&&callback.hostname!=='localhost'){alert('The OAuth callback must use HTTPS.');return}
+ if(callback.origin==='https://multi-ai-memory-api.mdshihab74.workers.dev'){alert('This current Worker has not been verified to implement the OAuth callback. Configure that secure backend route before using it.');return}
+ let state;try{state=crypto.randomUUID()}catch(e){state=String(Date.now())+'-'+Math.random().toString(36).slice(2)}
+ try{sessionStorage.setItem('multi-ai-facebook-oauth-state',state)}catch(e){}
+ const oauth=new URL('https://www.facebook.com/v26.0/dialog/oauth');
+ oauth.searchParams.set('client_id',appSettings.facebookAppId);oauth.searchParams.set('redirect_uri',callback.href);oauth.searchParams.set('response_type','code');oauth.searchParams.set('state',state);oauth.searchParams.set('scope','public_profile,email,pages_show_list,pages_read_engagement,pages_manage_posts');
+ $('facebookStatus').textContent='Opening Meta consent screen. Connection is not confirmed until your backend validates state, exchanges the code server-side, and returns a verified connection status.';
+ const popup=window.open(oauth.href,'multiAiFacebookOAuth','popup,width=520,height=760');if(!popup)window.location.assign(oauth.href);
 });
+$('checkDeviceBtn').addEventListener('click',()=>{
+ const checks=['Speech recognition: '+((window.SpeechRecognition||window.webkitSpeechRecognition)?'supported':'not supported by this browser'),'Speech output: '+(synth?'supported':'not supported'),'Native share sheet: '+(navigator.share?'supported':'not supported'),'Clipboard write: '+(navigator.clipboard?.writeText?'available in this context':'not available / permission required'),'Installable PWA: '+(isStandalone()?'installed standalone':'check Chrome menu for Install app'),'Full Android / other-app control requires a native companion app and explicit Android permissions'];
+ $('deviceStatus').textContent=checks.join(' · ');alert(checks.join('\n\n'));
+});
+$('resetSettingsBtn').addEventListener('click',()=>{appSettings={...defaultSettings};try{localStorage.removeItem(SETTINGS_KEY)}catch(e){}loadSettingsForm();setStatus('Preferences reset')});
+$('clearLocalDataBtn').addEventListener('click',()=>{if(!confirm('Clear saved app preferences on this device? This does not delete server-side memories.'))return;try{localStorage.removeItem(SETTINGS_KEY)}catch(e){}appSettings={...defaultSettings};loadSettingsForm();setStatus('Local preferences cleared')});
+async function openAgentUrl(){
+ let value=$('agentUrlInput').value.trim();if(!value){alert('Enter the website address first.');return}
+ if(!/^[a-z][a-z0-9+.-]*:\/\//i.test(value))value='https://'+value;
+ try{const url=new URL(value);if(!['http:','https:'].includes(url.protocol))throw new Error('Only http/https allowed');window.open(url.href,'_blank','noopener,noreferrer')}catch(e){alert('Use a valid https:// or http:// website address.')}
+}
+$('agentOpenUrlBtn').addEventListener('click',openAgentUrl);
+$('agentShareBtn').addEventListener('click',async()=>{try{if(navigator.share)await navigator.share({title:'Multi AI',text:'Chat with Multi AI',url:location.href});else if(navigator.clipboard){await navigator.clipboard.writeText(location.href);alert('Page link copied.')}else alert('Sharing is not supported by this browser.')}catch(e){if(e.name!=='AbortError')alert('Could not share from this browser.')}});
+$('agentCopyBtn').addEventListener('click',async()=>{if(!lastAssistantText){alert('There is no AI reply to copy yet.');return}try{await navigator.clipboard.writeText(lastAssistantText);alert('Latest AI reply copied.')}catch(e){alert('Clipboard access was blocked. Use the message text selection / copy menu.')}});
+$('agentWhatsAppBtn').addEventListener('click',()=>window.open('https://wa.me/','_blank','noopener,noreferrer'));
+loadSettingsForm();
 })();
 let installPromptEvent=null;
 const installButton=document.getElementById('installBtn');
