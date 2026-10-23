@@ -140,7 +140,7 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 </style>`);
 const $ = id => document.getElementById(id);
 const chat=$('chat'), input=$('prompt'), sendBtn=$('sendBtn'), provider=$('provider'), status=$('liveStatus');
-let history=[],busy=false,isLive=false,isSpeaking=false,recognition=null,lastAssistantText='',liveCamStream=null,liveCamTimer=null,liveCamBusy=false,liveCamText='';
+let history=[],busy=false,isLive=false,isSpeaking=false,recognition=null,recognitionStarting=false,recognitionActive=false,recognitionRestartTimer=null,queuedLiveUtterance='',lastAssistantText='',liveCamStream=null,liveCamTimer=null,liveCamBusy=false,liveCamText='';
 const SETTINGS_KEY='multi-ai-settings-v1';
 const defaultSettings={language:'auto',autoSpeak:false,voiceURI:'',rate:1.05,pitch:1,facebookAppId:'',fastReply:true};
 let facebookSession=null,facebookSdkPromise=null;
@@ -331,7 +331,9 @@ async function getReply(messages){
  return callBackend([...contextMessages,...messages]);
 }
 async function send(text){
- text=cleanText(text);if(!text||busy)return;
+ text=cleanText(text);if(!text)return;
+ if(isLive&&isSpeaking){try{synth?.cancel()}catch(e){}isSpeaking=false;$('liveOverlay').classList.remove('is-speaking');$('liveOverlay').classList.add('is-listening');$('liveModeStatus').textContent='LISTENING'}
+ if(busy){if(isLive&&text){queuedLiveUtterance=text;}return;}
  input.value='';input.style.height='auto';addMessage('user',text);
  history.push({role:'user',content:text});busy=true;sendBtn.disabled=true;setStatus('Thinking…');
  const body=addMessage('assistant',isLive?'Thinking…':'Thinking…');
@@ -342,7 +344,7 @@ async function send(text){
   $('liveCaption').textContent=result.text.slice(0,240);
   if(isLive||appSettings.autoSpeak)speak(result.text);
  }catch(e){body.textContent=/rate.?limit|quota|ফ্রি AI সার্ভিসের লিমিট/i.test(e.message)?'⏳ Multi AI এখন ব্যস্ত! '+e.message:'Could not get a reply. '+e.message;history.pop();}
- finally{busy=false;sendBtn.disabled=false;if(!isLive)setStatus('Ready');chat.scrollTop=chat.scrollHeight;}
+ finally{busy=false;sendBtn.disabled=false;if(!isLive)setStatus('Ready');chat.scrollTop=chat.scrollHeight;if(isLive&&queuedLiveUtterance){const next=queuedLiveUtterance;queuedLiveUtterance='';setTimeout(()=>send(next),0);}}
 }
 sendBtn.addEventListener('click',()=>send(input.value));
 input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send(input.value)}});
@@ -353,17 +355,19 @@ $('documentInput').addEventListener('change',async e=>{const file=e.target.files
 $('clearBtn').addEventListener('click',()=>{history=[];chat.replaceChildren();const w=document.createElement('div');w.className='welcome';w.innerHTML='<div class="orb">✦</div><h1>Fresh conversation</h1><p>Your on-page chat history has been cleared.</p>';chat.appendChild(w)});
 function makeRecognition(){
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;
- const r=new SR();r.lang=appSettings.language==='en-US'?'en-US':(appSettings.language==='bn-BD'?'bn-BD':(/^en/i.test(navigator.language)?'en-US':'bn-BD'));r.interimResults=false;r.continuous=false;
- r.onresult=e=>{const t=e.results?.[0]?.[0]?.transcript;if(t){input.value=t;if(isLive)send(t);else input.focus()}};
- r.onerror=()=>{if(isLive&&!isSpeaking){setStatus('Mic error — retrying');setTimeout(startRecognition,1000)}};
- r.onend=()=>{if(isLive&&!isSpeaking)setTimeout(startRecognition,350)};
+ const r=new SR();r.lang=appSettings.language==='en-US'?'en-US':(appSettings.language==='bn-BD'?'bn-BD':(/^en/i.test(navigator.language)?'en-US':'bn-BD'));r.interimResults=true;r.continuous=true;
+ r.onstart=()=>{recognitionActive=true;recognitionStarting=false;if(isLive&&!isSpeaking){setStatus('Listening…');$('liveCaption').textContent='তোমার কথা শুনছি। কথা বলার মাঝেও বাধা দিয়ে প্রশ্ন করতে পারো।'}};
+ r.onresult=e=>{let finalText='';for(let i=e.resultIndex;i<e.results.length;i++){const item=e.results[i];if(item.isFinal)finalText+=item[0]?.transcript||'';else if(isLive&&!isSpeaking)$('liveCaption').textContent=(item[0]?.transcript||'').trim()||'তোমার কথা শুনছি…'}const t=cleanText(finalText);if(t){input.value=t;if(isLive){if(isSpeaking){try{synth?.cancel()}catch(e){}isSpeaking=false;$('liveOverlay').classList.remove('is-speaking');$('liveOverlay').classList.add('is-listening');$('liveModeStatus').textContent='LISTENING'}send(t)}else input.focus()}};
+ r.onerror=e=>{recognitionStarting=false;recognitionActive=false;if(!isLive)return;if(e.error==='not-allowed'||e.error==='service-not-allowed'){setStatus('Microphone permission needed');$('liveCaption').textContent='মাইক্রোফোনের অনুমতি দাও, তারপর আবার Go Live চাপো।';return}if(e.error==='aborted')return;scheduleRecognitionRestart(900)};
+ r.onend=()=>{recognitionActive=false;recognitionStarting=false;if(isLive)scheduleRecognitionRestart(250)};
  return r;
 }
 recognition=makeRecognition();
-function startRecognition(){if(!isLive||isSpeaking||!recognition)return;try{recognition.start();setStatus('Listening…')}catch(e){}}
+function scheduleRecognitionRestart(delay=250){if(!isLive||!recognition||recognitionRestartTimer)return;recognitionRestartTimer=setTimeout(()=>{recognitionRestartTimer=null;startRecognition()},delay)}
+function startRecognition(){if(!isLive||!recognition||recognitionActive||recognitionStarting)return;recognitionStarting=true;try{recognition.start()}catch(e){recognitionStarting=false;if(isLive)scheduleRecognitionRestart(500)}}
 function speak(text){
  if((!isLive&&!appSettings.autoSpeak)||!synth)return;isSpeaking=true;if(isLive){$('liveOverlay').classList.remove('is-listening');$('liveOverlay').classList.add('is-speaking');$('liveModeStatus').textContent='SPEAKING';$('liveCaption').textContent=text.slice(0,240)}
- try{recognition?.stop()}catch(e){}
+ // Keep speech recognition running during TTS so the user can interrupt naturally.
  const u=new SpeechSynthesisUtterance(text);u.lang=/[\u0980-\u09FF]/.test(text)?'bn-BD':'en-US';u.rate=Number(appSettings.rate)||1.05;u.pitch=Number(appSettings.pitch)||1;const selectedVoice=(synth?.getVoices?.()||[]).find(v=>v.voiceURI===appSettings.voiceURI);if(selectedVoice)u.voice=selectedVoice;
  u.onend=()=>{isSpeaking=false;if(isLive){$('liveOverlay').classList.remove('is-speaking');$('liveOverlay').classList.add('is-listening');$('liveModeStatus').textContent='LISTENING';startRecognition()}};u.onerror=()=>{isSpeaking=false;if(isLive){$('liveOverlay').classList.remove('is-speaking');$('liveOverlay').classList.add('is-listening');$('liveModeStatus').textContent='LISTENING';startRecognition()}};synth.speak(u);
 }
@@ -411,7 +415,7 @@ function enterAgentMode(){
  $('liveOverlay').hidden=false;$('liveOverlay').classList.add('is-listening');setStatus('Agent mode');startRecognition();
 }
 function exitAgentMode(){
- isLive=false;stopLiveCam();$('liveOverlay').hidden=true;$('liveOverlay').classList.remove('is-listening','is-speaking');$('liveBtn').textContent='🎧 Go Live';$('liveBtn').classList.remove('live');setStatus('Ready');
+ isLive=false;if(recognitionRestartTimer){clearTimeout(recognitionRestartTimer);recognitionRestartTimer=null}recognitionStarting=false;recognitionActive=false;queuedLiveUtterance='';stopLiveCam();$('liveOverlay').hidden=true;$('liveOverlay').classList.remove('is-listening','is-speaking');$('liveBtn').textContent='🎧 Go Live';$('liveBtn').classList.remove('live');setStatus('Ready');
  try{recognition?.stop()}catch(e){}if(synth)synth.cancel();isSpeaking=false;
 }
 $('liveBtn').addEventListener('click',()=>{if(isLive)exitAgentMode();else enterAgentMode()});
