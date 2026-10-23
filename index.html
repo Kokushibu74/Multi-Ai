@@ -359,7 +359,7 @@ function makeRecognition(){
  r.onstart=()=>{recognitionActive=true;recognitionStarting=false;if(isLive&&!isSpeaking){setStatus('Listening…');$('liveCaption').textContent='তোমার কথা শুনছি। কথা বলার মাঝেও বাধা দিয়ে প্রশ্ন করতে পারো।'}};
  r.onresult=e=>{let finalText='';for(let i=e.resultIndex;i<e.results.length;i++){const item=e.results[i];if(item.isFinal)finalText+=item[0]?.transcript||'';else if(isLive&&!isSpeaking)$('liveCaption').textContent=(item[0]?.transcript||'').trim()||'তোমার কথা শুনছি…'}const t=cleanText(finalText);if(t){input.value=t;if(isLive){if(isSpeaking){try{synth?.cancel()}catch(e){}isSpeaking=false;$('liveOverlay').classList.remove('is-speaking');$('liveOverlay').classList.add('is-listening');$('liveModeStatus').textContent='LISTENING'}send(t)}else input.focus()}};
  r.onerror=e=>{recognitionStarting=false;recognitionActive=false;if(!isLive)return;if(e.error==='not-allowed'||e.error==='service-not-allowed'){setStatus('Microphone permission needed');$('liveCaption').textContent='মাইক্রোফোনের অনুমতি দাও, তারপর আবার Go Live চাপো।';return}if(e.error==='aborted')return;scheduleRecognitionRestart(900)};
- r.onend=()=>{recognitionActive=false;recognitionStarting=false;if(isLive)scheduleRecognitionRestart(250)};
+ r.onend=()=>{recognitionActive=false;recognitionStarting=false;if(isLive)scheduleRecognitionRestart(1400)};
  return r;
 }
 recognition=makeRecognition();
