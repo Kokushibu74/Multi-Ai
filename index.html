@@ -98,8 +98,8 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
       <a href="https://developers.facebook.com/docs/facebook-login/" target="_blank" rel="noopener noreferrer">Facebook Login docs ↗</a>
     </section>
     <section class="settings-group"><h3>Agent & Device Tools</h3>
-      <p>Go Live opens hands-free voice chat. During an active session, the only available control is End Session.</p>
-      <div class="button-row"><button id="checkDeviceBtn" type="button">Check device support</button><button id="openLiveFromSettingsBtn" type="button">Start Agent Mode</button></div>
+      <p>Go Live starts hands-free voice chat. While the session is active, only End Session is shown.</p>
+      <div class="button-row"><button id="checkDeviceBtn" type="button">Check device support</button></div>
       <p id="deviceStatus" role="status">Device capability has not been checked.</p>
     </section>
     <section class="settings-group"><h3>Privacy & Storage</h3>
@@ -335,8 +335,7 @@ $('micBtn').addEventListener('click',()=>{
 function enterAgentMode(){
  if(!recognition){alert('Live voice needs Chrome or another browser supporting SpeechRecognition. You can still use Settings and device-action buttons.');return}
  isLive=true;$('liveBtn').textContent='⏹ End Session';$('liveBtn').classList.add('live');
- $('liveOverlay').hidden=false;$('liveOverlay').classList.add('is-listening');$('liveModeStatus').textContent='VOICE AGENT · ON';
- $('liveCaption').textContent='Speak naturally in Bangla or English.';setStatus('Agent mode');startRecognition();
+ $('liveOverlay').hidden=false;$('liveOverlay').classList.add('is-listening');setStatus('Agent mode');startRecognition();
 }
 function exitAgentMode(){
  isLive=false;$('liveOverlay').hidden=true;$('liveOverlay').classList.remove('is-listening','is-speaking');$('liveBtn').textContent='🎧 Go Live';$('liveBtn').classList.remove('live');setStatus('Ready');
@@ -344,7 +343,7 @@ function exitAgentMode(){
 }
 $('liveBtn').addEventListener('click',()=>{if(isLive)exitAgentMode();else enterAgentMode()});
 $('liveStopBtn').addEventListener('click',exitAgentMode);
-$('openLiveFromSettingsBtn').addEventListener('click',()=>{$('settingsDialog').close();enterAgentMode()});
+
 $('settingsBtn').addEventListener('click',()=>{loadSettingsForm();$('settingsDialog').showModal()});
 $('closeSettingsBtn').addEventListener('click',()=>$('settingsDialog').close());
 $('liveSettingsBtn').addEventListener('click',()=>{$('settingsDialog').showModal();loadSettingsForm()});
