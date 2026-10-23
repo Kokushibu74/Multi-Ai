@@ -98,7 +98,7 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
       <a href="https://developers.facebook.com/docs/facebook-login/" target="_blank" rel="noopener noreferrer">Facebook Login docs ↗</a>
     </section>
     <section class="settings-group"><h3>Agent & Device Tools</h3>
-      <p>Go Live enables hands-free voice chat and offers browser-approved actions: open a URL, share the page, copy the latest reply, or open WhatsApp. It cannot silently change Android settings, read other apps, or control the whole phone.</p>
+      <p>Go Live opens hands-free voice chat. During an active session, the only available control is End Session.</p>
       <div class="button-row"><button id="checkDeviceBtn" type="button">Check device support</button><button id="openLiveFromSettingsBtn" type="button">Start Agent Mode</button></div>
       <p id="deviceStatus" role="status">Device capability has not been checked.</p>
     </section>
@@ -112,14 +112,9 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
   <div class="live-top"><div class="live-brand">✦ MULTI AI <span style="color:#9eb8ff">AGENT</span></div><span id="liveModeStatus" class="live-indicator">VOICE AGENT READY</span></div>
   <div class="live-center"><div class="live-orb-shell"><div class="live-orb" aria-hidden="true"></div></div>
     <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><h1 class="live-title">I'm listening.</h1>
-    <p id="liveCaption" class="live-subtitle">Speak naturally in Bangla or English. Tap Stop Live to end the session.</p>
+    <p id="liveCaption" class="live-subtitle">Speak naturally in Bangla or English. Tap End Session to leave voice mode.</p>
   </div>
-  <section class="live-tools"><h3>Phone actions · tap to run</h3>
-    <div class="field"><input id="agentUrlInput" type="url" inputmode="url" placeholder="https://example.com" aria-label="Website address"><button id="agentOpenUrlBtn" type="button">Open URL ↗</button></div>
-    <div class="live-tool-buttons"><button id="agentShareBtn" type="button">↗ Share page</button><button id="agentCopyBtn" type="button">▣ Copy last reply</button><button id="agentWhatsAppBtn" type="button">◉ Open WhatsApp</button></div>
-    <p style="color:#aab2cb;font-size:11px;margin:0">Actions open a page or the Android share sheet; this web app cannot operate other apps invisibly.</p>
-  </section>
-  <div class="live-bottom"><button id="liveSettingsBtn" type="button">⚙ Settings</button><button id="liveStopBtn" class="live-stop" type="button">⏹ Stop Live</button></div>
+  <div class="live-bottom"><button id="liveStopBtn" class="live-stop" type="button">⏹ End Session</button></div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script><script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script><script>
 (() => {
@@ -341,7 +336,7 @@ $('micBtn').addEventListener('click',()=>{
 });
 function enterAgentMode(){
  if(!recognition){alert('Live voice needs Chrome or another browser supporting SpeechRecognition. You can still use Settings and device-action buttons.');return}
- isLive=true;$('liveBtn').textContent='⏹ Stop Live';$('liveBtn').classList.add('live');
+ isLive=true;$('liveBtn').textContent='⏹ End Session';$('liveBtn').classList.add('live');
  $('liveOverlay').hidden=false;$('liveOverlay').classList.add('is-listening');$('liveModeStatus').textContent='VOICE AGENT · ON';
  $('liveCaption').textContent='Speak naturally in Bangla or English.';setStatus('Agent mode');startRecognition();
 }
