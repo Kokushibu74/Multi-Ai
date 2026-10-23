@@ -14,5 +14,5 @@ test('web retrieval uses a fixed public provider endpoint', () => {
 test('web retrieval bounds query length, times out, and explains limitations', () => {
   assert.match(source, /slice\(0, 200\)/);
   assert.match(source, /AbortController/);
-  assert.match(source, /not a complete search engine index/);
+  assert.match(source, /coverage is limited/);
 });
