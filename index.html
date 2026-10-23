@@ -108,16 +108,14 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
     </section>
   </div>
 </dialog>
-<div id="liveOverlay" class="live-overlay" hidden role="dialog" aria-modal="true" aria-label="Multi AI live agent mode">
-  <div class="live-top"><div class="live-brand">✦ MULTI AI <span style="color:#9eb8ff">AGENT</span></div><span id="liveModeStatus" class="live-indicator">VOICE AGENT READY</span></div>
-  <div class="live-center"><div class="live-orb-shell"><div class="live-orb" aria-hidden="true"></div></div>
-    <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><h1 class="live-title">I'm listening.</h1>
-    <p id="liveCaption" class="live-subtitle">Speak naturally in Bangla or English. Tap End Session to leave voice mode.</p>
-  </div>
-  <div class="live-bottom"><button id="liveStopBtn" class="live-stop" type="button">⏹ End Session</button></div>
+<div id="liveOverlay" class="live-overlay live-minimal" hidden role="dialog" aria-modal="true" aria-label="Live agent session">
+  <button id="liveStopBtn" class="live-stop" type="button">⏹ End Session</button>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script><script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script><script>
 (() => {
+document.head.insertAdjacentHTML('beforeend','<style>.live-minimal{align-items:center;justify-content:center}
+.live-minimal .live-stop{position:relative;inset:auto;margin:0}
+</style>');
 const $ = id => document.getElementById(id);
 const chat=$('chat'), input=$('prompt'), sendBtn=$('sendBtn'), provider=$('provider'), status=$('liveStatus');
 let history=[],busy=false,isLive=false,isSpeaking=false,recognition=null,lastAssistantText='';
