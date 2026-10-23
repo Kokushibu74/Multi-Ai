@@ -212,8 +212,8 @@ async function callLLM7(messages){ return callBackend([{role:'system',content:PO
 function shouldLookupOnline(query){
  const q=String(query||'').trim();
  if(q.length<8)return false;
- if(/^(hi|hello|hey|thanks|thank you|ok|okay|হাই|হ্যালো|ধন্যবাদ|আচ্ছা|ঠিক আছে|good morning|good night)[.!?\\s]*$/i.test(q))return false;
- const question=/\\b(who|what|when|where|why|how|which|find|search|look up|browse|latest|current|today|tonight|yesterday|tomorrow|now|recent|news|price|release|version|update|weather|election|president|score|schedule|deadline|rate|exchange|explain|define|compare|history|science|research|source|fact|meaning|cause|effect|discover|invent|code|coding|debug|program|javascript|typescript|python|react|html|css|sql|api|npm|node\\.js|github|cloudflare|termux)\\b|কি|কী|কেন|কিভাবে|কীভাবে|কে\\b|কবে|কোথায়|কোথায়|ব্যাখ্যা|তথ্য|ইতিহাস|বিজ্ঞান|মানে|কারণ|তুলনা|আজ|এখন|বর্তমান|সর্বশেষ|সাম্প্রতিক|খবর|নিউজ|দাম|দর|আবহাওয়া|আবহাওয়া|নির্বাচন|রাষ্ট্রপতি|সংস্করণ|আপডেট|সময়|সময়|সার্চ|খুঁজে|অনুসন্ধান|ওয়েব|ওয়েব|ওয়েবসাইট|ওয়েবসাইট/i.test(q);
+ if(/^(hi|hello|hey|thanks|thank you|ok|okay|হাই|হ্যালো|ধন্যবাদ|আচ্ছা|ঠিক আছে|good morning|good night)[.!?\s]*$/i.test(q))return false;
+ const question=/\b(who|what|when|where|why|how|which|find|search|look up|browse|latest|current|today|tonight|yesterday|tomorrow|now|recent|news|price|release|version|update|weather|election|president|score|schedule|deadline|rate|exchange|explain|define|compare|history|science|research|source|fact|meaning|cause|effect|discover|invent|code|coding|debug|program|javascript|typescript|python|react|html|css|sql|api|npm|node\.js|github|cloudflare|termux)\b|কি|কী|কেন|কিভাবে|কীভাবে|কে\b|কবে|কোথায়|কোথায়|ব্যাখ্যা|তথ্য|ইতিহাস|বিজ্ঞান|মানে|কারণ|তুলনা|আজ|এখন|বর্তমান|সর্বশেষ|সাম্প্রতিক|খবর|নিউজ|দাম|দর|আবহাওয়া|আবহাওয়া|নির্বাচন|রাষ্ট্রপতি|সংস্করণ|আপডেট|সময়|সময়|সার্চ|খুঁজে|অনুসন্ধান|ওয়েব|ওয়েব|ওয়েবসাইট|ওয়েবসাইট/i.test(q);
  return question;
 }
 function stripMarkup(value){
