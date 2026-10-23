@@ -369,7 +369,7 @@ async function analyzeLiveCamFrame(){
   canvas.width=Math.round(video.videoWidth*scale);canvas.height=Math.round(video.videoHeight*scale);
   canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
   const result=await Tesseract.recognize(canvas,'eng+ben');
-  const text=String(result.data?.text||'').replace(/\\s+/g,' ').trim().slice(0,1800);
+  const text=String(result.data?.text||'').replace(/\s+/g,' ').trim().slice(0,1800);
   if(text&&text!==liveCamText){liveCamText=text;$('liveCamStatus').textContent='ক্যামেরা চালু · লেখা শনাক্ত হয়েছে। কিছু জানতে মুখে প্রশ্ন করো।'}
   else if(!text)$('liveCamStatus').textContent='ক্যামেরা চালু। দৃশ্য দেখা যাচ্ছে; লেখা শনাক্ত হয়নি।';
  }catch(e){$('liveCamStatus').textContent='এই ফ্রেম বিশ্লেষণ করা যায়নি।'}
