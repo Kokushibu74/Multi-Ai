@@ -358,12 +358,17 @@ function makeRecognition(){
  const r=new SR();r.lang=appSettings.language==='en-US'?'en-US':(appSettings.language==='bn-BD'?'bn-BD':(/^en/i.test(navigator.language)?'en-US':'bn-BD'));r.interimResults=true;r.continuous=true;
  r.onstart=()=>{recognitionActive=true;recognitionStarting=false;if(isLive&&!isSpeaking){setStatus('Listening…');$('liveCaption').textContent='তোমার কথা শুনছি। কথা বলার মাঝেও বাধা দিয়ে প্রশ্ন করতে পারো।'}};
  r.onresult=e=>{let finalText='';for(let i=e.resultIndex;i<e.results.length;i++){const item=e.results[i];if(item.isFinal)finalText+=item[0]?.transcript||'';else if(isLive&&!isSpeaking)$('liveCaption').textContent=(item[0]?.transcript||'').trim()||'তোমার কথা শুনছি…'}const t=cleanText(finalText);if(t){input.value=t;if(isLive){if(isSpeaking){try{synth?.cancel()}catch(e){}isSpeaking=false;$('liveOverlay').classList.remove('is-speaking');$('liveOverlay').classList.add('is-listening');$('liveModeStatus').textContent='LISTENING'}send(t)}else input.focus()}};
- r.onerror=e=>{recognitionStarting=false;recognitionActive=false;if(!isLive)return;if(e.error==='not-allowed'||e.error==='service-not-allowed'){setStatus('Microphone permission needed');$('liveCaption').textContent='মাইক্রোফোনের অনুমতি দাও, তারপর আবার Go Live চাপো।';return}if(e.error==='aborted')return;scheduleRecognitionRestart(900)};
+ r.onerror=e=>{recognitionStarting=false;recognitionActive=false;if(!isLive)return;if(e.error==='not-allowed'||e.error==='service-not-allowed'){setStatus('Microphone permission needed');$('liveCaption').textContent='মাইক্রোফোনের অনুমতি দাও, তারপর আবার Go Live চাপো।';return}if(e.error==='aborted')return;scheduleRecognitionRestart(1200)};
  r.onend=()=>{recognitionActive=false;recognitionStarting=false;if(isLive)scheduleRecognitionRestart(1400)};
  return r;
 }
 recognition=makeRecognition();
-function scheduleRecognitionRestart(delay=250){if(!isLive||!recognition||recognitionRestartTimer)return;recognitionRestartTimer=setTimeout(()=>{recognitionRestartTimer=null;startRecognition()},delay)}
+function scheduleRecognitionRestart(delay=1200){
+ // Android Chrome may play a system chime whenever its Web Speech session is reopened.
+ // Debounce restarts to avoid rapid mic on/off cycles; the browser/OS owns the chime itself.
+ if(!isLive||!recognition||recognitionRestartTimer||isSpeaking)return;
+ recognitionRestartTimer=setTimeout(()=>{recognitionRestartTimer=null;if(isLive&&!isSpeaking)startRecognition()},Math.max(1000,delay));
+}
 function startRecognition(){if(!isLive||!recognition||recognitionActive||recognitionStarting)return;recognitionStarting=true;try{recognition.start()}catch(e){recognitionStarting=false;if(isLive)scheduleRecognitionRestart(500)}}
 function speak(text){
  if((!isLive&&!appSettings.autoSpeak)||!synth)return;isSpeaking=true;if(isLive){$('liveOverlay').classList.remove('is-listening');$('liveOverlay').classList.add('is-speaking');$('liveModeStatus').textContent='SPEAKING';$('liveCaption').textContent=text.slice(0,240)}
