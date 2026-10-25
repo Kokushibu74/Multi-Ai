@@ -377,10 +377,15 @@ async function getReply(messages){
  if(isLive&&liveCamText)contextMessages.push({role:'system',content:'LIVE CAMERA OCR CONTEXT (text recognized from the user-enabled camera preview; may be incomplete or wrong; it is not a full visual scene understanding):\n'+liveCamText+'\nUse only as tentative context and tell the user if visual details cannot be established from text alone.'});
  return callBackend([...contextMessages,...messages]);
 }
+let lastSubmittedText='',lastSubmittedAt=0;
 async function send(text){
  text=cleanText(text);if(!text)return;
- if(isLive&&isSpeaking){try{synth?.cancel()}catch(e){}isSpeaking=false;$('liveOverlay').classList.remove('is-speaking');$('liveOverlay').classList.add('is-listening');$('liveModeStatus').textContent='LISTENING'}
+ const now=Date.now();
+ // Ignore duplicate click/Enter/voice events for the same prompt arriving nearly together.
+ if(text===lastSubmittedText&&now-lastSubmittedAt<1800)return;
  if(busy){if(isLive&&text){queuedLiveUtterance=text;}return;}
+ lastSubmittedText=text;lastSubmittedAt=now;
+ if(isLive&&isSpeaking){try{synth?.cancel()}catch(e){}isSpeaking=false;$('liveOverlay').classList.remove('is-speaking');$('liveOverlay').classList.add('is-listening');$('liveModeStatus').textContent='LISTENING'}
  input.value='';input.style.height='auto';addMessage('user',text);
  history.push({role:'user',content:text});busy=true;sendBtn.disabled=true;setStatus('Thinking…');startEta();
  const body=addMessage('assistant','');body.textContent='';
