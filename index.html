@@ -26,6 +26,8 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
 .settings-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:17px 19px;background:#171923ee;border-bottom:1px solid var(--line);backdrop-filter:blur(10px)}
 .settings-head h2{margin:0;font-size:20px}.settings-body{padding:17px;display:grid;gap:17px}
 .settings-group{border:1px solid var(--line);background:#1e202a;border-radius:16px;padding:14px;display:grid;gap:11px}
+/* Facebook Page publishing is not part of this assistant UI; keep legacy handlers inert but hide its settings card. */
+.settings-group:has(#facebookAppId){display:none!important}
 .settings-group h3{margin:0 0 2px;font-size:14px}.settings-group p{margin:0;color:var(--muted);font-size:12px}
 .field{display:grid;gap:5px}.field label,.checkrow{font-size:13px;color:#dce0ee}.field input,.field select,.field textarea{width:100%;min-width:0;background:#101219;border:1px solid #41465a;color:var(--text);border-radius:10px;padding:10px}.field textarea{resize:vertical;min-height:75px}
 .field input[type=range]{padding:0;accent-color:var(--accent)}.checkrow{display:flex;align-items:center;gap:9px}.checkrow input{accent-color:var(--accent);width:16px;height:16px}
