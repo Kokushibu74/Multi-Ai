@@ -19,7 +19,7 @@ main{width:min(900px,100%);margin:0 auto;flex:1;min-height:0;display:flex;flex-d
 footer{width:min(900px,100%);margin:0 auto;padding:12px 16px max(14px,env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 18%)}
 .composer{border:1px solid #393d4b;background:var(--panel);border-radius:20px;padding:10px;display:flex;align-items:flex-end;gap:8px;box-shadow:0 8px 35px #0002}
 textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;background:transparent;color:var(--text);padding:9px;line-height:1.5}
-.smallnote{text-align:center;color:var(--muted);font-size:11px;margin-top:8px}.live{border-color:#ff6666;color:#ff9999}.status{font-size:12px;color:var(--muted);padding:0 3px}
+.smallnote{text-align:center;color:var(--muted);font-size:11px;margin-top:8px}.live{border-color:#ff6666;color:#ff9999}.status{font-size:12px;color:var(--muted);padding:0 3px;display:flex;align-items:center;gap:7px;white-space:nowrap}.status-dot{width:8px;height:8px;border-radius:50%;background:#71e6a6;display:inline-block;flex:none;box-shadow:0 0 8px #71e6a677}.status-dot.thinking{background:#ff425b;box-shadow:0 0 11px #ff425b;animation:statusBlink .7s ease-in-out infinite}.status-dot.typing{background:#8db7ff;box-shadow:0 0 11px #8db7ff;animation:statusBlink .55s ease-in-out infinite}.eta-pill{font-size:11px;font-variant-numeric:tabular-nums;color:#d8c9ff;border:1px solid #7862aa;border-radius:999px;padding:4px 8px;background:linear-gradient(110deg,#34234f,#202b4c,#34234f);background-size:200% 100%;animation:etaGlow 1.8s ease-in-out infinite,etaShimmer 2.8s linear infinite;white-space:nowrap}.eta-pill .eta-time{display:inline-block;min-width:2.5em;text-align:center;font-weight:800;color:#fff}@keyframes statusBlink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.28;transform:scale(.75)}}@keyframes etaGlow{0%,100%{box-shadow:0 0 0 #a68bff00;transform:translateY(0)}50%{box-shadow:0 0 13px #a68bff35;transform:translateY(-1px)}}@keyframes etaShimmer{to{background-position:-200% 0}}@media(prefers-reduced-motion:reduce){.status-dot.thinking,.status-dot.typing,.eta-pill{animation:none}}
 [hidden]{display:none!important}
 .settings-dialog{width:min(620px,calc(100% - 22px));max-width:620px;max-height:88dvh;padding:0;border:1px solid #41465a;border-radius:22px;background:#171923;color:var(--text);box-shadow:0 25px 100px #000a;overflow:auto}
 .settings-dialog::backdrop{background:#05060bd9;backdrop-filter:blur(10px)}
@@ -53,7 +53,7 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
 </style>
 </head>
 <body>
-<header><div class="brand">✦ <span>Multi</span> AI</div><div class="headright"><span class="pill">Keyless endpoints · best effort</span><span id="liveStatus" class="status">Ready</span></div></header>
+<header><div class="brand">✦ <span>Multi</span> AI</div><div class="headright"><span class="pill">Keyless endpoints · best effort</span><span id="liveStatus" class="status"><i id="statusDot" class="status-dot" aria-hidden="true"></i><span id="statusLabel">Ready</span></span><span id="replyEta" class="eta-pill" hidden>Estimated <span id="etaTime" class="eta-time">8s</span></span></div></header>
 <main>
 <div class="toolbar">
 <select id="provider" aria-label="AI model">
@@ -196,7 +196,12 @@ LEARNING FROM FEEDBACK:
 Use explicit corrections and preferences from the active conversation and any returned memory to personalize later answers. When corrected, re-evaluate rather than defend the old answer. Long-term learning only works when backend memory actually saves and retrieves information; never pretend that model weights were retrained.
 `;
 const synth=window.speechSynthesis;
-function setStatus(s){status.textContent=s}
+let etaInterval=null,etaRemaining=8,lastReplyDurationMs=0;
+function setStatus(s){status.textContent=s;const dot=$('statusDot'),label=$('statusLabel');if(!dot||!label)return;dot.classList.remove('thinking','typing');label.textContent=s;if(/thinking|searching|working|processing/i.test(s))dot.classList.add('thinking');else if(/typing|replying/i.test(s))dot.classList.add('typing')}
+function stopEta(){if(etaInterval){clearInterval(etaInterval);etaInterval=null}$('replyEta').hidden=true}
+function startEta(){stopEta();etaRemaining=Math.max(5,Math.min(18,Math.round(lastReplyDurationMs?lastReplyDurationMs/1000:8)));$('etaTime').textContent=etaRemaining+'s';$('replyEta').hidden=false;etaInterval=setInterval(()=>{etaRemaining=Math.max(0,etaRemaining-1);$('etaTime').textContent=etaRemaining?etaRemaining+'s':'soon…';if(etaRemaining===0){clearInterval(etaInterval);etaInterval=null}},1000)}
+const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function typeReply(body,text){setStatus('Typing reply…');stopEta();body.textContent='';const chunks=String(text).match(/\S+\s*/g)||[String(text)];for(let i=0;i<chunks.length;i++){body.appendChild(document.createTextNode(chunks[i]));chat.scrollTop=chat.scrollHeight;const chunk=chunks[i].trim();const pause=/[.!?…][”’"')\]]*$/.test(chunk)?105:/[,;:][”’"')\]]*$/.test(chunk)?65:26;await wait(pause)}renderReply(body,text);chat.scrollTop=chat.scrollHeight;}
 function renderReply(body,text){
  const source=String(text??'').replace(/\r/g,'');const lines=source.split('\n');let paragraph=[],list=null,codeLines=null,quote=[];
  function inline(parent,value){
@@ -377,16 +382,16 @@ async function send(text){
  if(isLive&&isSpeaking){try{synth?.cancel()}catch(e){}isSpeaking=false;$('liveOverlay').classList.remove('is-speaking');$('liveOverlay').classList.add('is-listening');$('liveModeStatus').textContent='LISTENING'}
  if(busy){if(isLive&&text){queuedLiveUtterance=text;}return;}
  input.value='';input.style.height='auto';addMessage('user',text);
- history.push({role:'user',content:text});busy=true;sendBtn.disabled=true;setStatus('Thinking…');
- const body=addMessage('assistant',isLive?'Thinking…':'Thinking…');
+ history.push({role:'user',content:text});busy=true;sendBtn.disabled=true;setStatus('Thinking…');startEta();
+ const body=addMessage('assistant','');body.textContent='';
  try{
-  const result=await getReply(history.slice(-(appSettings.fastReply!==false?8:16)));
-  body.textContent=result.text;lastAssistantText=result.text;const m=body.parentElement.querySelector('.meta');if(m)m.textContent='Multi AI · '+result.name;
+  const requestStarted=performance.now();const result=await getReply(history.slice(-(appSettings.fastReply!==false?8:16)));
+  lastReplyDurationMs=performance.now()-requestStarted;await typeReply(body,result.text);lastAssistantText=result.text;const m=body.parentElement.querySelector('.meta');if(m)m.textContent='Multi AI · '+result.name;
   history.push({role:'assistant',content:result.text});
   $('liveCaption').textContent=result.text.slice(0,240);
   if(isLive||appSettings.autoSpeak)speak(result.text);
- }catch(e){body.textContent=/rate.?limit|quota|ফ্রি AI সার্ভিসের লিমিট/i.test(e.message)?'⏳ Multi AI এখন ব্যস্ত! '+e.message:'Could not get a reply. '+e.message;history.pop();}
- finally{busy=false;sendBtn.disabled=false;if(!isLive)setStatus('Ready');chat.scrollTop=chat.scrollHeight;if(isLive&&queuedLiveUtterance){const next=queuedLiveUtterance;queuedLiveUtterance='';setTimeout(()=>send(next),0);}}
+ }catch(e){stopEta();body.textContent=/rate.?limit|quota|ফ্রি AI সার্ভিসের লিমিট/i.test(e.message)?'⏳ Multi AI এখন ব্যস্ত! '+e.message:'Could not get a reply. '+e.message;history.pop();}
+ finally{stopEta();busy=false;sendBtn.disabled=false;if(!isLive)setStatus('Ready');chat.scrollTop=chat.scrollHeight;if(isLive&&queuedLiveUtterance){const next=queuedLiveUtterance;queuedLiveUtterance='';setTimeout(()=>send(next),0);}}
 }
 sendBtn.addEventListener('click',()=>send(input.value));
 input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send(input.value)}});
