@@ -26,8 +26,6 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
 .settings-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:17px 19px;background:#171923ee;border-bottom:1px solid var(--line);backdrop-filter:blur(10px)}
 .settings-head h2{margin:0;font-size:20px}.settings-body{padding:17px;display:grid;gap:17px}
 .settings-group{border:1px solid var(--line);background:#1e202a;border-radius:16px;padding:14px;display:grid;gap:11px}
-/* Facebook Page publishing is not part of this assistant UI; keep legacy handlers inert but hide its settings card. */
-.settings-group:has(#facebookAppId){display:none!important}
 .settings-group h3{margin:0 0 2px;font-size:14px}.settings-group p{margin:0;color:var(--muted);font-size:12px}
 .field{display:grid;gap:5px}.field label,.checkrow{font-size:13px;color:#dce0ee}.field input,.field select,.field textarea{width:100%;min-width:0;background:#101219;border:1px solid #41465a;color:var(--text);border-radius:10px;padding:10px}.field textarea{resize:vertical;min-height:75px}
 .field input[type=range]{padding:0;accent-color:var(--accent)}.checkrow{display:flex;align-items:center;gap:9px}.checkrow input{accent-color:var(--accent);width:16px;height:16px}
@@ -84,19 +82,6 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
       <div class="field"><label for="settingsPitch">Voice pitch · <span id="settingsPitchValue">1.0</span></label><input id="settingsPitch" type="range" min="0.75" max="1.25" step="0.05" value="1"></div>
       <p>Voice quality depends on voices installed on your Android/browser. The app does not clone a real person's voice.</p>
     </section>
-    <section class="settings-group"><h3>Connections · Facebook</h3>
-      <p>Official Meta login. You need a Meta App ID and must configure your website domain in Meta for Developers. This integration targets Facebook Pages, not posts to a personal profile.</p>
-      <div class="field"><label for="facebookAppId">Meta / Facebook App ID (public ID only)</label><input id="facebookAppId" inputmode="numeric" autocomplete="off" placeholder="Enter your public App ID"></div>
-      <div class="notice">Required Page permissions: pages_show_list, pages_read_engagement, pages_manage_posts. Meta app mode, Page access, and App Review may limit which accounts can use it. Access tokens stay in app memory and are not saved to local storage. Never paste an App Secret or token here.</div>
-      <div class="button-row"><button id="saveSettingsBtn" class="primary" type="button">Save settings</button><button id="connectFacebookBtn" type="button">Connect Facebook</button><button id="disconnectFacebookBtn" type="button">Disconnect</button></div>
-      <p id="facebookStatus" role="status">Facebook: not connected</p>
-      <div class="field"><label for="facebookPageSelect">Facebook Page</label><select id="facebookPageSelect" disabled><option value="">Connect Facebook and load Pages first</option></select></div>
-      <div class="field"><label for="facebookPostText">New Page post</label><textarea id="facebookPostText" rows="3" placeholder="Write a post for the selected Facebook Page…" disabled></textarea></div>
-      <div class="button-row"><button id="refreshFacebookPagesBtn" type="button" disabled>↻ Refresh Pages</button><button id="publishFacebookPostBtn" class="primary" type="button" disabled>Publish Page post</button></div>
-      <p id="facebookActionStatus" role="status">No Facebook action has been run.</p>
-      <a href="https://developers.facebook.com/apps/" target="_blank" rel="noopener noreferrer">Meta for Developers ↗</a>
-      <a href="https://developers.facebook.com/docs/facebook-login/" target="_blank" rel="noopener noreferrer">Facebook Login docs ↗</a>
-    </section>
     <section class="settings-group"><h3>Agent & Device Tools</h3>
       <p>Go Live starts hands-free voice chat. While the session is active, only End Session is shown.</p>
       <div class="button-row"><button id="checkDeviceBtn" type="button">Check device support</button></div>
@@ -142,8 +127,7 @@ const $ = id => document.getElementById(id);
 const chat=$('chat'), input=$('prompt'), sendBtn=$('sendBtn'), provider=$('provider'), status=$('liveStatus');
 let history=[],busy=false,isLive=false,isSpeaking=false,recognition=null,recognitionStarting=false,recognitionActive=false,recognitionRestartTimer=null,queuedLiveUtterance='',lastAssistantText='',liveCamStream=null,liveCamTimer=null,liveCamBusy=false,liveCamText='';
 const SETTINGS_KEY='multi-ai-settings-v1';
-const defaultSettings={language:'auto',autoSpeak:false,voiceURI:'',rate:1.05,pitch:1,facebookAppId:'',fastReply:true};
-let facebookSession=null,facebookSdkPromise=null;
+const defaultSettings={language:'auto',autoSpeak:false,voiceURI:'',rate:1.05,pitch:1,fastReply:true};
 function readSettings(){try{return {...defaultSettings,...JSON.parse(localStorage.getItem(SETTINGS_KEY)||'{}')}}catch(e){return {...defaultSettings}}}
 let appSettings=readSettings();
 const API_BASE = 'https://multi-ai-memory-api.mdshihab74.workers.dev';
@@ -506,11 +490,11 @@ function loadSettingsForm(){
  $('settingsLanguage').value=appSettings.language;$('settingsAutoSpeak').checked=!!appSettings.autoSpeak;$('settingsFastReply').checked=appSettings.fastReply!==false;
  $('settingsRate').value=appSettings.rate;$('settingsPitch').value=appSettings.pitch;
  $('settingsRateValue').textContent=Number(appSettings.rate).toFixed(2)+'×';$('settingsPitchValue').textContent=Number(appSettings.pitch).toFixed(2);
- $('facebookAppId').value=appSettings.facebookAppId||'';$('facebookStatus').textContent=facebookSession?'Facebook account connected':'Facebook: not connected';loadVoiceOptions();
+ loadVoiceOptions();
 }
 function saveSettings(){
- appSettings={...appSettings,language:$('settingsLanguage').value,autoSpeak:$('settingsAutoSpeak').checked,fastReply:$('settingsFastReply').checked,voiceURI:$('settingsVoice').value,rate:Number($('settingsRate').value),pitch:Number($('settingsPitch').value),facebookAppId:$('facebookAppId').value.trim()};
- try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(appSettings));$('facebookStatus').textContent='Preferences saved on this device. Facebook is not connected.';setStatus('Settings saved')}catch(e){alert('Could not save settings in this browser. Check storage settings.')}
+ appSettings={...appSettings,language:$('settingsLanguage').value,autoSpeak:$('settingsAutoSpeak').checked,fastReply:$('settingsFastReply').checked,voiceURI:$('settingsVoice').value,rate:Number($('settingsRate').value),pitch:Number($('settingsPitch').value)};
+ try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(appSettings));setStatus('Settings saved')}catch(e){alert('Could not save settings in this browser. Check storage settings.')}
  if(recognition){try{recognition.lang=appSettings.language==='en-US'?'en-US':(appSettings.language==='bn-BD'?'bn-BD':(/^en/i.test(navigator.language)?'en-US':'bn-BD'))}catch(e){}}
  if(/^\\d{5,}$/.test(appSettings.facebookAppId)&&!window.FB){ensureFacebookSdk(appSettings.facebookAppId).then(()=>{$('facebookStatus').textContent='Meta SDK ready. Tap Connect Facebook to sign in.'}).catch(e=>{$('facebookStatus').textContent='Could not load Meta SDK: '+e.message})}
 }
@@ -518,63 +502,6 @@ $('saveSettingsBtn').addEventListener('click',saveSettings);
 $('settingsRate').addEventListener('input',()=>{$('settingsRateValue').textContent=Number($('settingsRate').value).toFixed(2)+'×'});
 $('settingsPitch').addEventListener('input',()=>{$('settingsPitchValue').textContent=Number($('settingsPitch').value).toFixed(2)});
 if(synth)synth.onvoiceschanged=loadVoiceOptions;
-function ensureFacebookSdk(appId){
- if(window.FB&&window.__multiAIFacebookAppId===appId)return Promise.resolve();
- if(window.FB&&window.__multiAIFacebookAppId!==appId)return Promise.reject(new Error('The page already loaded a different App ID. Reload the app after changing the ID.'));
- if(facebookSdkPromise)return facebookSdkPromise;
- facebookSdkPromise=new Promise((resolve,reject)=>{
-  window.fbAsyncInit=()=>{try{window.FB.init({appId,cookie:true,xfbml:false,version:'v26.0'});window.__multiAIFacebookAppId=appId;resolve()}catch(e){reject(e)}};
-  let script=document.getElementById('facebook-jssdk');
-  if(!script){script=document.createElement('script');script.id='facebook-jssdk';script.src='https://connect.facebook.net/en_US/sdk.js';script.async=true;script.defer=true;script.onerror=()=>reject(new Error('Meta SDK could not load. Check your connection, App ID and browser content blockers.'));document.head.appendChild(script)}
- });
- return facebookSdkPromise;
-}
-function refreshFacebookPages(){
- if(!facebookSession||!window.FB){$('facebookActionStatus').textContent='Connect Facebook first.';return}
- $('facebookActionStatus').textContent='Loading Pages with the permissions you granted…';
- window.FB.api('/me/accounts',{fields:'id,name,access_token,tasks'},response=>{
-  if(response?.error){$('facebookActionStatus').textContent='Could not load Pages: '+response.error.message;return}
-  facebookSession.pages=(response?.data||[]).filter(p=>p.id&&p.access_token);
-  const select=$('facebookPageSelect');select.replaceChildren();
-  const first=document.createElement('option');first.value='';first.textContent=facebookSession.pages.length?'Choose a Facebook Page':'No available Pages found';select.appendChild(first);
-  facebookSession.pages.forEach(page=>{const option=document.createElement('option');option.value=page.id;option.textContent=page.name||('Page '+page.id);select.appendChild(option)});
-  select.disabled=!facebookSession.pages.length;$('facebookPostText').disabled=!facebookSession.pages.length;$('publishFacebookPostBtn').disabled=!facebookSession.pages.length;
-  $('refreshFacebookPagesBtn').disabled=false;
-  $('facebookActionStatus').textContent=facebookSession.pages.length?'Loaded '+facebookSession.pages.length+' Page(s). Select one before publishing.':'No manageable Pages were returned. Check Page access and the pages_show_list permission.';
- });
-}
-$('connectFacebookBtn').addEventListener('click',()=>{
- saveSettings();
- if(!/^\d{5,}$/.test(appSettings.facebookAppId)){alert('Enter and save a valid Meta App ID first.');return}
- if(!window.FB||window.__multiAIFacebookAppId!==appSettings.facebookAppId){
-  ensureFacebookSdk(appSettings.facebookAppId).then(()=>{alert('Meta SDK is ready. Tap Connect Facebook again to open the official login prompt.')}).catch(e=>{ $('facebookStatus').textContent=e.message;alert(e.message)});return;
- }
- $('facebookStatus').textContent='Waiting for official Facebook Login…';
- window.FB.login(response=>{
-  if(!response?.authResponse){$('facebookStatus').textContent='Facebook login was cancelled or permissions were not granted.';return}
-  facebookSession={userId:response.authResponse.userID,accessToken:response.authResponse.accessToken,pages:[]};
-  window.FB.api('/me',{fields:'id,name,email'},profile=>{
-   const accountName=profile&&!profile.error?profile.name||profile.id:response.authResponse.userID;
-   $('facebookStatus').textContent='Connected in this page session as '+accountName+'. Loading Pages…';
-   refreshFacebookPages();
-  });
- },{scope:'public_profile,email,pages_show_list,pages_read_engagement,pages_manage_posts',return_scopes:true});
-});
-$('refreshFacebookPagesBtn').addEventListener('click',refreshFacebookPages);
-$('disconnectFacebookBtn').addEventListener('click',()=>{
- facebookSession=null;$('facebookPageSelect').replaceChildren();const option=document.createElement('option');option.value='';option.textContent='Connect Facebook and load Pages first';$('facebookPageSelect').appendChild(option);$('facebookPageSelect').disabled=true;$('facebookPostText').disabled=true;$('publishFacebookPostBtn').disabled=true;$('refreshFacebookPagesBtn').disabled=true;$('facebookStatus').textContent='Disconnected from Multi AI in this page session. No token was saved to browser storage.';$('facebookActionStatus').textContent='Disconnected.';
-});
-$('publishFacebookPostBtn').addEventListener('click',()=>{
- if(!facebookSession){alert('Connect Facebook first.');return}
- const page=facebookSession.pages.find(p=>p.id===$('facebookPageSelect').value);const message=$('facebookPostText').value.trim();
- if(!page){alert('Select a Facebook Page first.');return}if(!message){alert('Write the Page post first.');return}
- if(!confirm('Publish this post to the selected Facebook Page now?'))return;
- $('facebookActionStatus').textContent='Publishing to '+page.name+'…';
- window.FB.api('/'+page.id+'/feed','POST',{message,access_token:page.access_token},response=>{
-  if(response?.error){$('facebookActionStatus').textContent='Publish failed: '+response.error.message;return}
-  $('facebookActionStatus').textContent='Post published successfully. Post ID: '+(response.id||'created');$('facebookPostText').value='';
- });
-});
 $('checkDeviceBtn').addEventListener('click',()=>{
  const checks=['Speech recognition: '+((window.SpeechRecognition||window.webkitSpeechRecognition)?'supported':'not supported by this browser'),'Speech output: '+(synth?'supported':'not supported'),'Native share sheet: '+(navigator.share?'supported':'not supported'),'Clipboard write: '+(navigator.clipboard?.writeText?'available in this context':'not available / permission required'),'Installable PWA: '+(isStandalone()?'installed standalone':'check Chrome menu for Install app'),'Full Android / other-app control requires a native companion app and explicit Android permissions'];
  $('deviceStatus').textContent=checks.join(' · ');alert(checks.join('\n\n'));
