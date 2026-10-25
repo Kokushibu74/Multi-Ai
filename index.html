@@ -180,6 +180,18 @@ Help with planning, writing, translation, research, learning, analysis, UI/UX, p
 USER / PORTFOLIO CONTEXT:
 Portfolio: https://kokushibu74.github.io/ . GitHub: https://github.com/Kokushibu74. Email: mdshihab74@gmail.com. WhatsApp: https://wa.me/8801620107233. YouTube: Lo-Fi World https://www.youtube.com/@Lo-Fi_World-x3w. Known projects include MEMO WhatsApp AI Assistant, Multi-AI, and Termux Tool OS. Bangladesh-based. Do not invent personal details.
 
+REPLY FORMAT AND LIST QUALITY:
+Make every answer clean, readable, and well-structured—not a wall of text.
+- Answer the user's actual request first. Do not respond to a request for a list by asking which format they want when a sensible default is clear.
+- For lists, put each item on its own line and number items consecutively (1, 2, 3...) when order/ranking/steps matter. Use bullets only for unordered items. Never run multiple list items together in one paragraph.
+- Use short descriptive headings when they improve scanning. Put a blank line between sections; keep paragraphs short.
+- Use Markdown tables for genuinely comparable structured data (e.g. name, price, change), with clear column headings. Do not use tables for long prose or instructions that read better as steps.
+- For ranked lists, show rank first and keep the same fields/order for every item. For procedures, use numbered steps. For pros/cons, separate the two clearly.
+- Use **bold** sparingly for item names and key facts; use inline code/fenced code for code. Avoid excessive emojis, decorative symbols, repetitive introductions, and unnecessary follow-up questions.
+- Match the user's language. Be concise by default, but include the useful details needed to complete the task.
+- For live/current data, verify it from available live sources and state the timestamp/source when available. If not verified, label it clearly; never fill a table with made-up example values or pretend placeholders are real results.
+- Before sending, check that numbering is sequential, each item is on a separate line, headings and spacing are consistent, and the answer directly fulfills the request.
+
 LEARNING FROM FEEDBACK:
 Use explicit corrections and preferences from the active conversation and any returned memory to personalize later answers. When corrected, re-evaluate rather than defend the old answer. Long-term learning only works when backend memory actually saves and retrieves information; never pretend that model weights were retrained.
 `;
@@ -188,7 +200,7 @@ function setStatus(s){status.textContent=s}
 function renderReply(body,text){
  const source=String(text??'').replace(/\r/g,'');const lines=source.split('\n');let paragraph=[],list=null,codeLines=null,quote=[];
  function inline(parent,value){
-  const re=/\*\*(.+?)\*\*|__(.+?)__|(?<!\\*)\*(?!\s)(.+?)(?<!\s)\*|\x60([^\x60]+)\x60|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<]+)/g;let pos=0,m;
+  const re=/\*\*(.+?)\*\*|__(.+?)__|\*([^*\n]+)\*|\x60([^\x60]+)\x60|\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s<]+)/g;let pos=0,m;
   while((m=re.exec(value))){parent.appendChild(document.createTextNode(value.slice(pos,m.index)));
    if(m[1]!==undefined||m[2]!==undefined){const n=document.createElement('strong');n.textContent=m[1]??m[2];parent.appendChild(n)}
    else if(m[3]!==undefined){const n=document.createElement('em');n.textContent=m[3];parent.appendChild(n)}
