@@ -88,7 +88,7 @@ textarea{flex:1;min-width:0;max-height:150px;resize:none;border:0;outline:0;back
       <p id="deviceStatus" role="status">Device capability has not been checked.</p>
     </section>
     <section class="settings-group"><h3>Privacy & Storage</h3>
-      <p>Preferences are stored in this browser's local storage. Facebook tokens/passwords are never saved by this page. Chat messages are sent to the configured AI backend/provider when you send them.</p>
+      <p>Preferences are stored in this browser's local storage. Chat messages are sent to the configured AI backend/provider when you send them.</p>
       <div class="button-row"><button id="resetSettingsBtn" type="button">Reset preferences</button><button id="clearLocalDataBtn" type="button">Clear local preferences</button></div>
     </section>
   </div>
@@ -496,7 +496,6 @@ function saveSettings(){
  appSettings={...appSettings,language:$('settingsLanguage').value,autoSpeak:$('settingsAutoSpeak').checked,fastReply:$('settingsFastReply').checked,voiceURI:$('settingsVoice').value,rate:Number($('settingsRate').value),pitch:Number($('settingsPitch').value)};
  try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(appSettings));setStatus('Settings saved')}catch(e){alert('Could not save settings in this browser. Check storage settings.')}
  if(recognition){try{recognition.lang=appSettings.language==='en-US'?'en-US':(appSettings.language==='bn-BD'?'bn-BD':(/^en/i.test(navigator.language)?'en-US':'bn-BD'))}catch(e){}}
- if(/^\\d{5,}$/.test(appSettings.facebookAppId)&&!window.FB){ensureFacebookSdk(appSettings.facebookAppId).then(()=>{$('facebookStatus').textContent='Meta SDK ready. Tap Connect Facebook to sign in.'}).catch(e=>{$('facebookStatus').textContent='Could not load Meta SDK: '+e.message})}
 }
 $('saveSettingsBtn').addEventListener('click',saveSettings);
 $('settingsRate').addEventListener('input',()=>{$('settingsRateValue').textContent=Number($('settingsRate').value).toFixed(2)+'×'});
