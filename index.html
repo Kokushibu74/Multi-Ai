@@ -197,7 +197,7 @@ Use explicit corrections and preferences from the active conversation and any re
 `;
 const synth=window.speechSynthesis;
 let etaInterval=null,etaRemaining=8,lastReplyDurationMs=0;
-function setStatus(s){status.textContent=s;const dot=$('statusDot'),label=$('statusLabel');if(!dot||!label)return;dot.classList.remove('thinking','typing');label.textContent=s;if(/thinking|searching|working|processing/i.test(s))dot.classList.add('thinking');else if(/typing|replying/i.test(s))dot.classList.add('typing')}
+function setStatus(s){const dot=$('statusDot'),label=$('statusLabel');if(!dot||!label)return;dot.classList.remove('thinking','typing');label.textContent=s;if(/thinking|searching|working|processing/i.test(s))dot.classList.add('thinking');else if(/typing|replying/i.test(s))dot.classList.add('typing')}
 function stopEta(){if(etaInterval){clearInterval(etaInterval);etaInterval=null}$('replyEta').hidden=true}
 function startEta(){stopEta();etaRemaining=Math.max(5,Math.min(18,Math.round(lastReplyDurationMs?lastReplyDurationMs/1000:8)));$('etaTime').textContent=etaRemaining+'s';$('replyEta').hidden=false;etaInterval=setInterval(()=>{etaRemaining=Math.max(0,etaRemaining-1);$('etaTime').textContent=etaRemaining?etaRemaining+'s':'soon…';if(etaRemaining===0){clearInterval(etaInterval);etaInterval=null}},1000)}
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
