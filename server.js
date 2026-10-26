@@ -68,6 +68,9 @@ app.use(cors({
   allowedHeaders: ['Content-Type']
 }));
 
+// Search and remote-page retrieval make outbound requests; apply dedicated limits before mounting routes.
+app.use('/api/search', rateLimit({ windowMs: 60_000, max: 20 }));
+app.use('/api/browse', rateLimit({ windowMs: 60_000, max: 10 }));
 app.use(webSearchRouter);
 
 function configReady() {
