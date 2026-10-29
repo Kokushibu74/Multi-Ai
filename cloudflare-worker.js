@@ -54,10 +54,15 @@ export default {
   if(path==='/api/image' && request.method==='POST'){
    if(!env.AI) return json({error:'Image generation is not configured on this Worker.'},503);
    const b=await body(); if(b.__tooLarge) return json({error:'Request body too large.'},413);
-   const prompt=String(b.prompt||'').trim().slice(0,2048);
-   if(prompt.length<3) return json({error:'Please describe the image you want to generate.'},400);
+   const userPrompt=String(b.prompt||'').trim().slice(0,2048);
+   if(userPrompt.length<3) return json({error:'Please describe the image you want to generate.'},400);
+   const asksForCat=/(?:\\bcat\\b|\\bkitten\\b|\\bkitty\\b|বিড়াল|বিড়াল|বিলাই)/i.test(userPrompt);
+   const mentionsOtherCatScene=/(?:\\bsea\\b|\\bocean\\b|\\bbeach\\b|\\bhuman\\b|\\bperson\\b|\\bpeople\\b|সমুদ্র|মানুষ|সৈকত)/i.test(userPrompt);
+   const prompt=asksForCat&&!mentionsOtherCatScene
+    ? 'Create a high-quality, photorealistic image of ONE real domestic cat. The cat itself must be the unmistakable main subject, large and centered, with visible feline face, ears, whiskers, fur and paws. Simple natural background only. Absolutely no people, no humans, no ocean, no sea, no beach, no human portrait, and no unrelated subject. Follow the requested cat subject exactly.'
+    : 'Faithfully depict this exact user-requested subject: '+userPrompt+'. Keep the named subject clearly recognizable and dominant in the image. Do not replace it with a person, a landscape, the sea, or any unrelated subject unless the user explicitly requested those things.';
    try{
-    const generated=await env.AI.run('@cf/black-forest-labs/flux-1-schnell',{prompt,steps:4});
+    const generated=await env.AI.run('@cf/black-forest-labs/flux-1-schnell',{prompt:prompt.slice(0,2048),steps:4});
     if(!generated||!generated.image) throw new Error('The image model returned no image.');
     return json({image:'data:image/jpeg;base64,'+generated.image,provider:'Cloudflare Workers AI',model:'FLUX.1 schnell'});
    }catch(e){
