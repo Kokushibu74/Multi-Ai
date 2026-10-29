@@ -365,7 +365,8 @@ function isImageGenerationRequest(text){
  const q=String(text||'').trim();
  return /\b(?:generate|create|make|draw|paint|render)\s+(?:me\s+)?(?:an?\s+)?(?:image|picture|photo|illustration|artwork|wallpaper|logo|poster)s?\b/i.test(q)
   || /(?:ছবি|চিত্র)\s*(?:তৈরি(?:\s+করো|\s+কর)?|বানাও|আঁকো|এঁকে\s+দাও)/i.test(q)
-  || /(?:একটা|একটি)\s+(?:ছবি|চিত্র)\s+(?:বানাও|তৈরি\s+করো?|এঁকে\s+দাও|আঁকো)/i.test(q);
+  || /(?:একটা|একটি)\s+(?:ছবি|চিত্র)\s+(?:বানাও|তৈরি\s+করো?|এঁকে\s+দাও|আঁকো)/i.test(q)
+  || /(?:ছবি|চিত্র).*(?:তৈরি|বানাও|আঁকো|এঁকে\s+দাও)|(?:তৈরি|বানাও|এঁকে\s+দাও|আঁকো).*(?:ছবি|চিত্র)/i.test(q);
 }
 function imagePromptFrom(text){
  return String(text||'').trim()
