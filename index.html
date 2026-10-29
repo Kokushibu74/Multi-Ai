@@ -364,14 +364,17 @@ async function attachDocument(file){
 function isImageGenerationRequest(text){
  const q=String(text||'').trim();
  return /\b(?:generate|create|make|draw|paint|render)\s+(?:me\s+)?(?:an?\s+)?(?:image|picture|photo|illustration|artwork|wallpaper|logo|poster)s?\b/i.test(q)
-  || /(?:ছবি|চিত্র)\s*(?:তৈরি(?:\s+করো|\s+কর)?|বানাও|আঁকো|এঁকে\s+দাও)/i.test(q)
-  || /(?:একটা|একটি)\s+(?:ছবি|চিত্র)\s+(?:বানাও|তৈরি\s+করো?|এঁকে\s+দাও|আঁকো)/i.test(q)
-  || /(?:ছবি|চিত্র).*(?:তৈরি|বানাও|আঁকো|এঁকে\s+দাও)|(?:তৈরি|বানাও|এঁকে\s+দাও|আঁকো).*(?:ছবি|চিত্র)/i.test(q);
+  || /\b(?:i\s+want|i(?:'d| would)\s+like|want|show\s+me|give\s+me)\s+(?:an?\s+)?(?:image|picture|photo|illustration|artwork|wallpaper|logo|poster)s?\b/i.test(q)
+  || /(?:ছবি|চিত্র|ফটো).*(?:তৈরি|বানাও|আঁকো|এঁকে\s+দাও|চাই|দাও|দেখাও|দিয়ে\s+দাও)|(?:তৈরি|বানাও|এঁকে\s+দাও|আঁকো|চাই|চাইছি|দাও|দেখাও).*(?:ছবি|চিত্র|ফটো)/i.test(q)
+  || /(?:একটা|একটি)\s+(?:ছবি|চিত্র|ফটো)\s+(?:বানাও|তৈরি\s+করো?|এঁকে\s+দাও|আঁকো)/i.test(q);
 }
 function imagePromptFrom(text){
  return String(text||'').trim()
   .replace(/^(?:please\s+)?(?:generate|create|make|draw|paint|render)\s+(?:me\s+)?(?:an?\s+)?(?:image|picture|photo|illustration|artwork|wallpaper|logo|poster)s?\s*(?:(?:of|showing|about|for)\s+)?/i,'')
-  .replace(/^(?:দয়া\s+করে\s*)?(?:(?:একটা|একটি)\s*)?(?:ছবি|চিত্র)\s*(?:(?:তৈরি\s+করো?|বানাও|আঁকো|এঁকে\s+দাও)\s*)?/i,'')
+  .replace(/^\s*(?:i\s+want|i(?:'d| would)\s+like|want|show\s+me|give\s+me)\s+(?:an?\s+)?(?:image|picture|photo|illustration|artwork|wallpaper|logo|poster)s?\s*(?:(?:of|showing|about|for)\s+)?/i,'')
+  .replace(/^(?:দয়া\s+করে\s*)?(?:(?:আমি\s*)?(?:চাইছি|চাইতেছি|চাই|দাও|দেখাও)\s*)?(?:(?:একটা|একটি)\s*)?(?:ছবি|চিত্র|ফটো)\s*(?:(?:তৈরি\s+করো?|বানাও|আঁকো|এঁকে\s+দাও)\s*)?/i,'')
+  .replace(/^\s*(?:আমি\s*)?(?:চাইছি|চাইতেছি|চাই|দাও|দেখাও)\s*(?:একটা|একটি)?\s*/i,'')
+  .replace(/\s*(?:একটা|একটি)?\s*(?:ছবি|চিত্র|ফটো)\s*$/i,'')
   .trim();
 }
 async function callImageBackend(prompt){
