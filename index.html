@@ -361,8 +361,37 @@ async function attachDocument(file){
  $('documentStatus').hidden=false;$('documentStatus').textContent='📎 Attached: '+file.name+' · '+Math.min(text.length,30000)+' characters extracted';
  setStatus('File attached');
 }
+function isImageGenerationRequest(text){
+ const q=String(text||'').trim();
+ return /\\b(?:generate|create|make|draw|paint|render)\\s+(?:me\\s+)?(?:an?\\s+)?(?:image|picture|photo|illustration|artwork|wallpaper|logo|poster)s?\\b/i.test(q)
+  || /(?:ছবি|চিত্র)\\s*(?:তৈরি(?:\\s+করো|\\s+কর)?|বানাও|আঁকো|এঁকে\\s+দাও)/i.test(q)
+  || /(?:একটা|একটি)\\s+(?:ছবি|চিত্র)\\s+(?:বানাও|তৈরি\\s+করো?|এঁকে\\s+দাও|আঁকো)/i.test(q);
+}
+function imagePromptFrom(text){
+ return String(text||'').trim()
+  .replace(/^(?:please\\s+)?(?:generate|create|make|draw|paint|render)\\s+(?:me\\s+)?(?:an?\\s+)?(?:image|picture|photo|illustration|artwork|wallpaper|logo|poster)s?\\s*(?:(?:of|showing|about|for)\\s+)?/i,'')
+  .replace(/^(?:দয়া\\s+করে\\s*)?(?:(?:একটা|একটি)\\s*)?(?:ছবি|চিত্র)\\s*(?:(?:তৈরি\\s+করো?|বানাও|আঁকো|এঁকে\\s+দাও)\\s*)?/i,'')
+  .trim();
+}
+async function callImageBackend(prompt){
+ const r=await fetch(API_BASE+'/api/image',{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body:JSON.stringify({prompt})});
+ let j={};try{j=await r.json()}catch(e){}
+ if(!r.ok||!j.image){
+  const detail=String(j.error||'');
+  if(r.status===429||j.code==='IMAGE_QUOTA')throw new Error('ফ্রি image-generation quota শেষ বা সার্ভিস ব্যস্ত। কিছুক্ষণ পরে আবার চেষ্টা করো।');
+  throw new Error(detail||'Image generation HTTP '+r.status);
+ }
+ return {text:'তোমার ছবিটি তৈরি হয়েছে।',name:j.provider||'Cloudflare Workers AI',image:j.image};
+}
 async function getReply(messages){
  const latest=[...messages].reverse().find(m=>m.role==='user')?.content||'';
+ if(isImageGenerationRequest(latest)){
+  const prompt=imagePromptFrom(latest);
+  if(prompt.replace(/^(?:of|showing|about|for)\\s+/i,'').trim().length<3){
+   return {text:'অবশ্যই! কী ধরনের ছবি বানাব? যেমন: “রাতের শহরে নীল আলোয় একটি সাইবারপাঙ্ক বিড়াল”।',name:'Multi AI'};
+  }
+  return callImageBackend(prompt);
+ }
  let liveContext=await lookupLiveWeather(latest);
  const searchContext=await lookupWikipedia(latest);
  if(searchContext)liveContext+=(liveContext?'\n\n':'')+searchContext;
@@ -390,7 +419,9 @@ async function send(text){
  const body=addMessage('assistant','');body.textContent='';
  try{
   const requestStarted=performance.now();const result=await getReply(history.slice(-(appSettings.fastReply!==false?8:16)));
-  lastReplyDurationMs=performance.now()-requestStarted;requestDurations.push(lastReplyDurationMs);if(requestDurations.length>5)requestDurations.shift();await typeReply(body,result.text);lastAssistantText=result.text;const m=body.parentElement.querySelector('.meta');if(m)m.textContent='Multi AI · '+result.name;
+  lastReplyDurationMs=performance.now()-requestStarted;requestDurations.push(lastReplyDurationMs);if(requestDurations.length>5)requestDurations.shift();await typeReply(body,result.text);
+  if(result.image){const img=document.createElement('img');img.src=result.image;img.alt='AI-generated image';img.loading='lazy';img.decoding='async';img.style.display='block';img.style.maxWidth='100%';img.style.height='auto';img.style.borderRadius='12px';img.style.margin='10px 0';body.appendChild(img);chat.scrollTop=chat.scrollHeight;}
+  lastAssistantText=result.text;const m=body.parentElement.querySelector('.meta');if(m)m.textContent='Multi AI · '+result.name;
   history.push({role:'assistant',content:result.text});
   $('liveCaption').textContent=result.text.slice(0,240);
   if(isLive||appSettings.autoSpeak)speak(result.text);
