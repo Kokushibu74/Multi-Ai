@@ -1,4 +1,25 @@
 const rateBuckets = new Map();
+async function fetchGetWithRetry(url, options = {}) {
+ const {timeoutMs=8000,maxAttempts=2,...init}=options;
+ const method=String(init.method||"GET").toUpperCase();
+ if(method!=="GET"&&method!=="HEAD")return fetch(url,init);
+ const attempts=Math.max(1,Math.min(2,Number(maxAttempts)||2));
+ for(let attempt=0;attempt<attempts;attempt++){
+  try{
+   const response=await fetch(url,{...init,signal:AbortSignal.timeout(timeoutMs)});
+   if(![408,425,429,500,502,503,504].includes(response.status)||attempt+1>=attempts)return response;
+   const retryAfter=Number(response.headers?.get?.("Retry-After"));
+   try{await response.body?.cancel()}catch{}
+   const delay=Number.isFinite(retryAfter)&&retryAfter>0?Math.min(2000,retryAfter*1000):300*(2**attempt);
+   await new Promise(resolve=>setTimeout(resolve,delay));
+  }catch(error){
+   if(attempt+1>=attempts)throw error;
+   await new Promise(resolve=>setTimeout(resolve,300*(2**attempt)));
+  }
+ }
+ throw new Error("GET retry attempts exhausted");
+}
+
 function rateLimit(ip, bucket, max, windowMs = 60000) {
  const now = Date.now(), key = ip + ":" + bucket;
  let item = rateBuckets.get(key);
@@ -7,6 +28,18 @@ function rateLimit(ip, bucket, max, windowMs = 60000) {
  if (rateBuckets.size > 5000) for (const [k,v] of rateBuckets) if (now >= v.resetAt) rateBuckets.delete(k);
  return item.count <= max ? null : Math.max(1, Math.ceil((item.resetAt-now)/1000));
 }
+async function saveMemory(db,clientId,text){
+ const countRow=await db.prepare('SELECT COUNT(*) AS n FROM memories WHERE client_id=?').bind(clientId).first();
+ const count=Number(countRow?.n||0),excess=Math.max(0,count-99);
+ const memoryId=crypto.randomUUID(),createdAt=new Date().toISOString();
+ const insert=db.prepare('INSERT INTO memories(client_id,memory_id,text,created_at) VALUES(?,?,?,?)').bind(clientId,memoryId,text,createdAt);
+ if(excess>0){
+  const trim=db.prepare('DELETE FROM memories WHERE client_id=? AND memory_id IN (SELECT memory_id FROM memories WHERE client_id=? ORDER BY created_at ASC LIMIT ?)').bind(clientId,clientId,excess);
+  await db.batch([trim,insert]);
+ }else await insert.run();
+ return {memoryId,count:Math.min(100,count+1),createdAt};
+}
+
 export default {
  async fetch(request, env) {
   const origin = request.headers.get('Origin') || '';
@@ -27,8 +60,8 @@ export default {
   const knowledge='Portfolio owner: Shihabul Islam (GitHub username Kokushibu74), based in Bangladesh. Portfolio: https://kokushibu74.github.io/ Roles/interests: web development, UI/UX design, programming, AI assistants, and automation. GitHub: https://github.com/Kokushibu74 Contact email: mdshihab74@gmail.com WhatsApp: https://wa.me/8801620107233 YouTube: Lo-Fi World — https://www.youtube.com/@Lo-Fi_World-x3w. Known projects include MEMO WhatsApp AI Assistant and Termux Tool OS. Do not invent project details or credentials. Answer in Bangla, English, or Banglish to match visitor.';
   const validId=id=>/^[a-f0-9-]{16,64}$/i.test(String(id||''));
   const body=async()=>{try{const raw=await request.text();if(raw.length>65536)return {__tooLarge:true};return JSON.parse(raw)}catch{return {}}};
-  if(path==='/health' && request.method==='GET') return json({ok:true,service:'multi-ai-memory-api-cloudflare',memoryConfigured:!!env.DB});
-  if(path==='/api/knowledge' && request.method==='GET') return json({knowledge});
+  if(path==='/health' && request.method==='GET') return json({ok:true,service:'multi-ai-memory-api-cloudflare',memoryConfigured:!!env.DB,memoryLimitPerClient:100,searchCacheSeconds:300,knowledgeCacheSeconds:3600});
+  if(path==='/api/knowledge' && request.method==='GET') return json({knowledge},200,{'Cache-Control':'public, max-age=3600'});
   if(path==='/api/memory' && request.method==='GET'){
    if(!env.DB) return json({error:'Persistent memory is not configured; chat remains available.'},503);
    const id=url.searchParams.get('clientId'); if(!validId(id)) return json({error:'Invalid client ID'},400);
@@ -39,11 +72,8 @@ export default {
    if(!env.DB) return json({error:'Persistent memory is not configured; chat remains available.'},503);
    const b=await body(); if(b.__tooLarge) return json({error:'Request body too large.'},413); const id=b.clientId, text=String(b.text||'').trim().slice(0,1000);
    if(!validId(id)) return json({error:'Invalid client ID'},400); if(!text) return json({error:'Memory text is required.'},400);
-   const count=await env.DB.prepare('SELECT COUNT(*) AS n FROM memories WHERE client_id=?').bind(id).first();
-   if((count?.n||0)>=100){await env.DB.prepare('DELETE FROM memories WHERE client_id=? AND memory_id IN (SELECT memory_id FROM memories WHERE client_id=? ORDER BY created_at ASC LIMIT 1)').bind(id,id).run();}
-   const mid=crypto.randomUUID(), createdAt=new Date().toISOString();
-   await env.DB.prepare('INSERT INTO memories(client_id,memory_id,text,created_at) VALUES(?,?,?,?)').bind(id,mid,text,createdAt).run();
-   return json({ok:true,count:Math.min(100,(count?.n||0)+1),message:'Saved to Cloudflare D1 memory.'});
+   const saved=await saveMemory(env.DB,id,text);
+   return json({ok:true,count:saved.count,message:'Saved to Cloudflare D1 memory.'});
   }
   const del=path.match(/^\/api\/memory\/([^/]+)$/);
   if(del && request.method==='DELETE'){
@@ -85,8 +115,7 @@ export default {
    if(prefix.test(userText)){
     const saved=userText.replace(prefix,'').trim();
     if(!env.DB) return json({text:'Chat is available, but persistent memory is not configured on the backend yet. I cannot save this across sessions.',provider:'Memory',memoryAction:'unavailable'}); if(!saved) return json({text:'তুমি কী মনে রাখতে চাও, সেটা লিখে পাঠাও।',provider:'Memory'});
-    const mid=crypto.randomUUID(),createdAt=new Date().toISOString();
-    await env.DB.prepare('INSERT INTO memories(client_id,memory_id,text,created_at) VALUES(?,?,?,?)').bind(clientId,mid,saved.slice(0,1000),createdAt).run();
+    await saveMemory(env.DB,clientId,saved.slice(0,1000));
     return json({text:'মনে রাখলাম—Cloudflare D1 memory-তে সেভ হয়েছে।',provider:'Memory',memoryAction:'saved'});
    }
    const provider=['kilo','llm7'].includes(b.provider)?b.provider:'auto';
@@ -95,11 +124,13 @@ export default {
    const filtered=messages.filter(m=>m&&['user','assistant'].includes(m.role)&&typeof m.content==='string');
    const errors=[];
    for(const [name,endpoint,model] of providers){try{
-    const resp=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,messages:[{role:'system',content:system},...filtered],temperature:0.6})});
+    const resp=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,messages:[{role:'system',content:system},...filtered],temperature:0.6}),signal:AbortSignal.timeout(12000)});
     if(!resp.ok) throw new Error(name+' HTTP '+resp.status);
     const data=await resp.json(), text=data?.choices?.[0]?.message?.content;
     if(!text) throw new Error(name+' returned no message'); return json({text:String(text),provider:name});
    }catch(e){errors.push(e.message)}}
+   const safeErrors=errors.map(error=>String(error).replace(/Bearer\s+[A-Za-z0-9._-]+/gi,'Bearer [redacted]').replace(/[\r\n\t]+/g,' ').slice(0,100));
+   console.error('Multi-AI provider fallback exhausted:',safeErrors.join(' | '));
    return json({error:'AI provider is temporarily unavailable. Please try again.'},502);
   }
 
@@ -110,23 +141,23 @@ export default {
    const results=[];
    try{
     const endpoint='https://'+lang+'.wikipedia.org/w/api.php?'+new URLSearchParams({action:'query',list:'search',srsearch:q,format:'json',origin:'*',srlimit:'5',srprop:'snippet'});
-    const r=await fetch(endpoint,{headers:{Accept:'application/json','User-Agent':'MultiAI/1.0'},signal:AbortSignal.timeout(8000)});
+    const r=await fetchGetWithRetry(endpoint,{headers:{Accept:'application/json','User-Agent':'MultiAI/1.0'},timeoutMs:8000});
     if(r.ok){const d=await r.json();for(const x of d.query?.search||[])results.push({title:x.title,url:'https://'+lang+'.wikipedia.org/wiki/'+encodeURIComponent(x.title.replace(/ /g,'_')),snippet:String(x.snippet||'').replace(/<[^>]*>/g,' ').replace(/&quot;/g,'"').replace(/&amp;/g,'&').slice(0,700)});}
    }catch(e){}
    if(results.length<3){
-    try{const r=await fetch('https://html.duckduckgo.com/html/?q='+encodeURIComponent(q),{headers:{'User-Agent':'Mozilla/5.0 (compatible; MultiAI/1.0)','Accept':'text/html'},signal:AbortSignal.timeout(8000)});
+    try{const r=await fetchGetWithRetry('https://html.duckduckgo.com/html/?q='+encodeURIComponent(q),{headers:{'User-Agent':'Mozilla/5.0 (compatible; MultiAI/1.0)','Accept':'text/html'},timeoutMs:8000});
      if(r.ok){const html=(await r.text()).slice(0,120000);const re=/<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>[\s\S]*?<a[^>]+class="result__snippet"[^>]*>([\s\S]*?)<\/a>/gi;let m;while((m=re.exec(html))&&results.length<8){let href=m[1];try{const u=new URL(href,'https://duckduckgo.com');const real=u.searchParams.get('uddg');if(real)href=real;}catch(e){}const clean=x=>x.replace(/<[^>]*>/g,' ').replace(/&amp;/g,'&').replace(/&#x27;/g,"'").replace(/&quot;/g,'"').replace(/\s+/g,' ').trim();if(/^https?:\/\//i.test(href))results.push({title:clean(m[2]),url:href,snippet:clean(m[3]).slice(0,700)});}}
     }catch(e){}
    }
    const unique=[...new Map(results.filter(x=>x.url).map(x=>[x.url,x])).values()].slice(0,8);
-   return json({query:q,provider:'Wikipedia + DuckDuckGo HTML search',results:unique,retrievedAt:new Date().toISOString()});
+   return json({query:q,provider:'Wikipedia + DuckDuckGo HTML search',results:unique,retrievedAt:new Date().toISOString()},200,{'Cache-Control':'public, max-age=300, stale-while-revalidate=60'});
   }
   if(path==='/api/browse' && request.method==='GET'){
    const target=String(url.searchParams.get('url')||'');
    let parsed;try{parsed=new URL(target)}catch{return json({error:'A valid webpage URL is required.'},400)}
    if(!['http:','https:'].includes(parsed.protocol)||!parsed.hostname||parsed.username||parsed.password) return json({error:'Only public HTTP(S) webpages can be read.'},400);
    if(/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|\[?::1\]?$)/i.test(parsed.hostname))return json({error:'Private/local addresses are blocked.'},403);
-   try{const r=await fetch('https://r.jina.ai/'+parsed.href,{headers:{Accept:'text/plain','User-Agent':'MultiAI/1.0'},signal:AbortSignal.timeout(12000)});if(!r.ok)return json({error:'Webpage reader returned HTTP '+r.status},502);const text=(await r.text()).slice(0,30000);return json({url:parsed.href,title:parsed.hostname,text,provider:'Jina Reader',retrievedAt:new Date().toISOString()});}catch(e){return json({error:'Could not fetch webpage: '+String(e.message||e)},502)}
+   try{const r=await fetchGetWithRetry('https://r.jina.ai/'+parsed.href,{headers:{Accept:'text/plain','User-Agent':'MultiAI/1.0'},timeoutMs:12000});if(!r.ok)return json({error:'Webpage reader returned HTTP '+r.status},502);const text=(await r.text()).slice(0,30000);return json({url:parsed.href,title:parsed.hostname,text,provider:'Jina Reader',retrievedAt:new Date().toISOString()});}catch(e){return json({error:'Could not fetch webpage: '+String(e.message||e)},502)}
   }
  
   return json({error:'Not found'},404);

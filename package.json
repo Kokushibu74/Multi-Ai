@@ -6,7 +6,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "check": "node --check server.js && node --check web-search.js",
+    "check": "node --check server.js && node --check web-search.js && node --check cloudflare-worker.js",
     "test": "node --test"
   },
   "engines": {
