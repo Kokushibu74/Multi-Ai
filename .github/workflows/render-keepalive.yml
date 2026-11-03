@@ -8,23 +8,42 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: render-api-keepalive
+  cancel-in-progress: true
+
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 3
     steps:
-      - name: Ping Multi AI Render API
+      - name: Ping Multi AI Render API with bounded retries
         env:
           API_URL: https://multi-ai-memory-api.onrender.com/
         run: |
-          set +e
-          code=$(curl --silent --show-error --location --max-time 45 --output /tmp/render-response.txt --write-out "%{http_code}" "$API_URL")
-          curl_status=$?
-          echo "HTTP status: ${code:-unknown}; curl exit: $curl_status"
-          head -c 500 /tmp/render-response.txt 2>/dev/null || true
-          echo
-          if [ "$curl_status" -ne 0 ]; then
-            exit "$curl_status"
-          fi
-          # Any HTTP response proves the host answered; a route-level 404 is still a valid wake-up ping.
-          if [ -z "$code" ] || [ "$code" = "000" ]; then exit 1; fi
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            set +e
+            code=$(curl --silent --show-error --location --max-time 35 --output /tmp/render-response.txt --write-out "%{http_code}" "$API_URL")
+            curl_status=$?
+            set -e
+            echo "Attempt $attempt — HTTP status: ${code:-unknown}; curl exit: $curl_status"
+            head -c 300 /tmp/render-response.txt 2>/dev/null || true
+            echo
+            if [ "$curl_status" -eq 0 ] && [ -n "$code" ] && [ "$code" != "000" ]; then
+              case "$code" in
+                5??)
+                  echo "Render returned a server error; retrying."
+                  ;;
+                *)
+                  echo "Render host responded. A route-level 404 is acceptable for this wake-up ping."
+                  exit 0
+                  ;;
+              esac
+            else
+              echo "Render did not return a usable HTTP response; retrying."
+            fi
+            if [ "$attempt" -lt 3 ]; then sleep "$((attempt * 5))"; fi
+          done
+          echo "ERROR: Render API did not respond successfully after 3 bounded attempts."
+          exit 1
