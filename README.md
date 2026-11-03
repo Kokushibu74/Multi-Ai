@@ -1,8 +1,8 @@
 # ✦ Multi AI — Personal AI Chat with Memory
 
-A mobile-friendly, multilingual AI chat interface for **Bangla, English, and Banglish**, with voice input/output, free community-model fallback, portfolio-aware answers, and optional persistent memory stored encrypted in this GitHub repository.
+A mobile-friendly, multilingual AI chat interface for **Bangla, English, and Banglish**, with voice input/output, free community-model fallback, portfolio-aware answers, and optional persistent memory stored in Cloudflare D1.
 
-> **Status:** the static interface is hosted by GitHub Pages and calls the deployed Cloudflare Worker (`cloudflare-worker.js`). The Worker uses Cloudflare D1 for memory and Workers AI for image generation. Never put API tokens or secrets in browser code.
+> **Production API:** the static interface is hosted by GitHub Pages and calls `https://multi-ai-memory-api.mdshihab74.workers.dev`. The production source of truth is `cloudflare/multi-ai-memory-api.js` in the [portfolio repository](https://github.com/Kokushibu74/kokushibu74.github.io); this repository's `cloudflare-worker.js` is a mirrored copy checked by CI. The deployed Worker uses Cloudflare D1 for memory and Workers AI for image generation. Never put API tokens or secrets in browser code.
 
 ## ✨ Features
 
@@ -11,7 +11,7 @@ A mobile-friendly, multilingual AI chat interface for **Bangla, English, and Ban
 - **Voice:** browser speech recognition and speech synthesis where supported.
 - **Portfolio knowledge:** built-in facts about [Shihabul Islam's portfolio](https://kokushibu74.github.io/), projects, GitHub and public contact links.
 - **Persistent memory:** say `মনে রাখো, ...` or `Remember: ...`; ask `আমি কী মনে রাখতে বলেছিলাম?` to recall memories saved for this browser.
-- **Encrypted storage:** memory payloads are encrypted using AES-256-GCM before the backend writes `data/memory.enc.json` to GitHub. The encryption key stays in the backend's environment variables.
+- **Cloudflare D1 memory:** the current Worker stores browser-scoped memory records in D1. The optional legacy Render backend stores memory encrypted with AES-256-GCM in `data/memory.enc.json` on GitHub; its encryption key stays in Render environment variables.
 - **Per-browser memory scope:** a random browser ID separates each visitor's memory list. Clearing browser storage loses that ID, so the old list will no longer be associated automatically.
 - **Responsive UI:** desktop and mobile layouts; the portfolio chatbot embeds this interface in a floating window.
 - **Go Live / Agent Mode:** animated full-screen voice session, visible listening/speaking state, selectable installed system voice, speech speed and pitch controls.
@@ -46,9 +46,13 @@ GitHub Actions runs node scripts/check-inline-js.mjs before deploying Pages to c
 
 GitHub Pages is static hosting; it does not run Flask or Node.js server code.
 
-## ⚙️ Backend deployment (Render)
+## ☁️ Production backend (Cloudflare Worker)
 
-The API lives in `server.js` and uses Node.js. Deploy this repository as a **Web Service** on Render:
+The current PWA uses the Cloudflare Worker API. The production Worker is named `multi-ai-memory-api` and is configured with the `DB` (D1) and `AI` (Workers AI) bindings. Its canonical source is `cloudflare/multi-ai-memory-api.js` in the portfolio repository; this repository's `cloudflare-worker.js` is a mirrored copy. The Worker is edge-hosted and does not need a keepalive ping.
+
+## ⚙️ Optional legacy Render backend (`server.js`)
+
+`server.js` is a separate Node.js/Express alternative. The current PWA does not point to it; it uses the Cloudflare Worker. The Render keepalive workflow only pings this optional Render service. If you intentionally use that alternate backend, deploy this repository as a **Web Service** on Render:
 
 - **Repository:** `https://github.com/Kokushibu74/Multi-Ai`
 - **Branch:** `main`
@@ -74,7 +78,7 @@ Generate an encryption key privately in Termux/Linux/macOS with `openssl rand -h
 ```
 Use a cryptographically secure generator where possible. Save the key only in Render environment variables and a private password manager. If you lose it, encrypted memory cannot be decrypted.
 
-After deployment, set the `API_BASE` constant near the top of the script in `index.html` to your actual Render service URL, then commit that update. Do not use a placeholder URL.
+The current `API_BASE` in `index.html` already points to the production Cloudflare Worker. Leave it unchanged unless you intentionally migrate the frontend to the optional Render backend and have tested that migration.
 
 ## 🧠 Memory commands
 
@@ -84,13 +88,13 @@ Examples:
 - `আমি কী মনে রাখতে বলেছিলাম?`
 - `Show my memories`
 
-Memory is scoped to the browser's random client ID and stored as encrypted data in `data/memory.enc.json`. The repository file should remain encrypted; do not replace it with plain-text notes. The backend can still answer normal chat questions when memory is not configured, but it cannot persist memory until the two required environment variables are set.
+Memory is scoped to the browser's random client ID. The current Cloudflare Worker stores it in D1; the optional legacy Render backend stores it encrypted in `data/memory.enc.json`. Keep that legacy file encrypted. The Cloudflare Worker needs its D1 binding; the Render backend separately needs `GITHUB_TOKEN` and `MEMORY_ENCRYPTION_KEY`.
 
 ## 🛡️ Security notes
 
 - Never put `GITHUB_TOKEN`, `MEMORY_ENCRYPTION_KEY`, or any private API key in `index.html`.
 - Use a fine-grained token limited to this repository and revoke it if exposed.
-- Memory is encrypted at rest in GitHub, but prompts are still sent to the selected AI provider. Do not save passwords, financial credentials, government ID numbers, or other highly sensitive information.
+- The optional legacy Render backend encrypts its GitHub-backed memory at rest. Current Cloudflare D1 memory uses the managed D1 service. Prompts are still sent to the selected AI provider. Do not save passwords, financial credentials, government ID numbers, or other highly sensitive information.
 - The public chat endpoint can be used by visitors. Free providers may rate-limit or change their terms; add stricter rate limits before promoting it widely.
 - Keep `data/memory.enc.json` encrypted. Its contents are not meant to be manually edited.
 - GitHub Pages does not support server-side secrets or server code.
