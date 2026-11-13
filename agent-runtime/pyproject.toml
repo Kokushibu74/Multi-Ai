@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "multi-ai-local-agent-runtime"
+version = "0.1.0"
+description = "Loopback-only, zero-cost-first local agent sidecar for Multi-AI"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+browser = ["browser-use==1.0.3"]
+
+[tool.setuptools]
+py-modules = ["server"]

@@ -1,0 +1,37 @@
+name: Multi-AI Agent Runtime Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "agent-runtime/**"
+      - ".github/workflows/agent-runtime.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "agent-runtime/**"
+      - ".github/workflows/agent-runtime.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agent-runtime-\${{ github.workflow }}-\${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile
+        working-directory: agent-runtime
+        run: python -m py_compile server.py test_server.py
+      - name: Unit tests
+        working-directory: agent-runtime
+        run: python -m unittest -v test_server.py
