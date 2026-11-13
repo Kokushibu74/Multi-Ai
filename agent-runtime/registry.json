@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "project": "Multi-AI",
+  "mode": "local-prototype",
+  "uiChanges": false,
+  "productionConnected": false,
+  "sources": [
+    {"id":"browser-use","repository":"https://github.com/browser-use/browser-use","license":"MIT","integration":"optional-local-python-library","state":"gated"},
+    {"id":"agentmemory","repository":"https://github.com/rohitg00/agentmemory","license":"Apache-2.0","integration":"project-scoped-memory-adapter","state":"prototype"},
+    {"id":"scientific-agent-skills","repository":"https://github.com/K-Dense-AI/scientific-agent-skills","license":"MIT","integration":"skills-catalog","state":"catalog-only"},
+    {"id":"diagram-design","repository":"https://github.com/cathrynlavery/diagram-design","license":"MIT","integration":"mermaid-output-adapter","state":"prototype"},
+    {"id":"anthropic-cybersecurity-skills","repository":"https://github.com/mukul975/Anthropic-Cybersecurity-Skills","license":"Apache-2.0","integration":"defensive-static-audit","state":"prototype"},
+    {"id":"awesome-harness-engineering","repository":"https://github.com/walkinglabs/awesome-harness-engineering","license":"CC0-1.0","integration":"task-validation-and-run-records","state":"prototype"},
+    {"id":"openviking","repository":"https://github.com/volcengine/OpenViking","license":"AGPL-3.0","integration":"external-context-sidecar","state":"not-installed"}
+  ]
+}
